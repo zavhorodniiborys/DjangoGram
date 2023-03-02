@@ -6,7 +6,6 @@ class Profile(models.Model):
     bio = models.TextField(max_length=512)
     avatar = models.BinaryField()
 
-#todo delete profile when user deletes
 
 class User(models.Model):
     mail = models.CharField(max_length=64, unique=True, null=False)
@@ -15,16 +14,14 @@ class User(models.Model):
 
 
 class Post(models.Model):
-    # post_id = models.AutoField(primary_key=True)
-    profile_id = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='posts')
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='posts')
     tag = models.TextField(max_length=256)
     date = models.DateTimeField(auto_now_add=True)
-    vote_id = models.ForeignKey('Vote', on_delete=models.CASCADE)
-
+# todo localtime
 
 class Vote(models.Model):
-    profile_id = models.OneToOneField(Profile, related_name='votes', on_delete=models.CASCADE)
-    post_id = models.OneToOneField(Post, related_name='votes', on_delete=models.CASCADE)
+    profile = models.ForeignKey(Profile, related_name='votes', on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, related_name='votes', on_delete=models.CASCADE)
     vote = models.BooleanField()
 
     class Meta:
@@ -32,5 +29,5 @@ class Vote(models.Model):
 
 
 class Images(models.Model):
-    image = models.BinaryField()
-    post_id = models.ForeignKey(Post, on_delete=models.CASCADE)
+    image = models.ImageField()
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
