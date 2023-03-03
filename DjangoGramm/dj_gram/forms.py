@@ -1,3 +1,4 @@
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.forms import ModelForm, ClearableFileInput
 
 from .models import *
@@ -17,3 +18,17 @@ class ImageForm(ModelForm):
         widgets = {
             'image': ClearableFileInput(attrs={'multiple': True}),
         }
+
+
+
+class CustomUserCreationForm(UserCreationForm):
+
+    class Meta:
+        model = BUser
+        fields = ('username', 'email')
+
+class CustomUserChangeForm(UserChangeForm):
+
+    class Meta:
+        model = BUser
+        fields = ('username', 'email')

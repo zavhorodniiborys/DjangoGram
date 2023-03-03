@@ -1,3 +1,4 @@
+from django.contrib.auth.forms import UserCreationForm
 from django.views.generic.edit import CreateView
 from django.shortcuts import render
 from django.http import HttpResponse
@@ -36,10 +37,23 @@ def add_post(request):
     return render(request, 'dj_gram/add_post.html', context)
 
 
-class Register(CreateView):
-    model = User
-    fields = ['mail', 'pass_hash']
-    template_name = 'dj_gram/register.html'
+def register(request):
+    if request.method == 'POST':
+        form = CustomUserCreationForm(request.POST)
+        print(form.data)
+        if form.is_valid():
+            form.save()
+            print(form.cleaned_data)
+            form.save()
+    else:
+        form = CustomUserCreationForm()
+    # model = User
+    # fields = ['mail', 'pass_hash']
+    # template_name = 'dj_gram/register.html'
+
+    return render(request, 'dj_gram/register.html', {'form': form})
+
+
 def feed(request):
     pass
 

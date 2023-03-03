@@ -1,3 +1,5 @@
+from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
@@ -5,6 +7,20 @@ class Profile(models.Model):
     full_name = models.CharField(max_length=128)
     bio = models.TextField(max_length=512)
     avatar = models.BinaryField()
+
+
+class BUser(AbstractUser):
+    pass
+
+
+class CustomUser(AbstractBaseUser):
+    email = models.EmailField(verbose_name='mail', max_length=127, unique=True)
+    pass_hash = models.CharField(max_length=511)
+    full_name = models.CharField(max_length=128)
+    bio = models.TextField(max_length=512)
+    avatar = models.BinaryField()
+    is_active = models.BooleanField(default=True)
+    is_admin = models.BooleanField(default=False)
 
 
 class User(models.Model):

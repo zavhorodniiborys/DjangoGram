@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     'dj_gram.apps.BasicAppConfig',
 ]
 
+AUTH_USER_MODEL = 'dj_gram.BUser'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
