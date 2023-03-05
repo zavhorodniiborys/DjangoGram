@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'dj_gram.apps.BasicAppConfig',
 ]
 
-AUTH_USER_MODEL = 'dj_gram.BUser'
+AUTH_USER_MODEL = 'dj_gram.CustomUser'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -124,3 +124,12 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Email settings
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = '587'
+EMAIL_HOST_USER = 'zavgorodnijboris188@gmail.com'
+EMAIL_HOST_PASSWORD = 'gvajkdbdougklqnr'
+EMAIL_USE_TLS = True
+# EMAIL_USE_SSL = False

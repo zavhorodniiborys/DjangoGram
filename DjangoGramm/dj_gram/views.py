@@ -2,6 +2,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.views.generic.edit import CreateView
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.core.mail import send_mail
 
 from .models import *
 from .forms import *
@@ -21,7 +22,6 @@ def add_post(request):
         images = request.FILES.getlist('image')
 
         if post_form.is_valid() and image_form.is_valid():
-
             profile = Profile.objects.get(pk=1)
             print(profile)
 
@@ -39,17 +39,20 @@ def add_post(request):
 
 def register(request):
     if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        print(form.data)
+        form = CustomUserRegistrationMail(request.POST)  # maybe it`s better don`t attach form to model todo
         if form.is_valid():
-            form.save()
-            print(form.cleaned_data)
-            form.save()
+            user = form.save(commit=False)
+            user.is_active = False
+            user.save()
+
+            send_mail(
+                'Email confirmation',  # subject
+                'Your unique link',  # message
+                'zavgorodnijboris188@gmail.com',  # from email
+                [user.email],  # to email
+            )
     else:
         form = CustomUserCreationForm()
-    # model = User
-    # fields = ['mail', 'pass_hash']
-    # template_name = 'dj_gram/register.html'
 
     return render(request, 'dj_gram/register.html', {'form': form})
 
@@ -60,4 +63,3 @@ def feed(request):
 
 def profile(request, profile_id):
     pass
-

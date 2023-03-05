@@ -8,15 +8,25 @@ from .forms import CustomUserChangeForm, CustomUserCreationForm
 class PostAdmin(admin.ModelAdmin):
     readonly_fields = ('date',)
 
+
 class CustomUserAdmin(UserAdmin):
-    # add_form = CustomUserCreationForm
-    # form = CustomUserChangeForm
-    model = BUser
-    list_display = ['username', 'email', 'is_superuser']
+    add_form = CustomUserCreationForm
+    form = CustomUserChangeForm
+    model = CustomUser
+    list_display = ['email', 'is_superuser']
+    ordering = ('email',)
 
-    fieldsets = UserAdmin.fieldsets
+    fieldsets = (
+        (None, {'fields': ('email', 'password', 'bio')}),
+        ('Permissions', {'fields': ('is_staff', 'is_active')}),
+    )
+
+    add_fieldsets = (
+        (None, {'fields': ('email', 'password')}),
+        ('Permissions', {'fields': ('is_staff', 'is_active')}),
+    )
 
 
-admin.site.register(BUser, CustomUserAdmin)
+admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Post, PostAdmin)
-admin.site.register([Profile, User, Vote, Images])
+admin.site.register([Profile, Vote, Images])
