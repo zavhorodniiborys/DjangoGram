@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm, PasswordChangeForm
 from django.forms import ModelForm, ClearableFileInput
 
 from .models import *
@@ -39,8 +39,14 @@ class CustomUserCreationForm(UserCreationForm):
         del self.fields['password2']
 
 
+class CustomUserCreateProfile(UserChangeForm):
+    class Meta:
+        model = CustomUser
+        fields = ('first_name', 'last_name', 'bio')
+
+
 class CustomUserChangeForm(UserChangeForm):
 
     class Meta:
-        model = CustomUser
-        fields = ('email',)
+        fields = '__all__'
+        # exclude = ('email',)

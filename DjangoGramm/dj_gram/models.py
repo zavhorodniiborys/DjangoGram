@@ -73,6 +73,7 @@ class Post(models.Model):
     date = models.DateTimeField(auto_now_add=True)
 # todo localtime
 
+
 class Vote(models.Model):
     profile = models.ForeignKey(Profile, related_name='votes', on_delete=models.CASCADE)
     post = models.ForeignKey(Post, related_name='votes', on_delete=models.CASCADE)
