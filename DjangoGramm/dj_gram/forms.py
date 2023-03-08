@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm, PasswordChangeForm
-from django.forms import ModelForm, ClearableFileInput
+from django.forms import ModelForm, ClearableFileInput, ImageField
 
 from .models import *
 
@@ -39,10 +39,10 @@ class CustomUserCreationForm(UserCreationForm):
         del self.fields['password2']
 
 
-class CustomUserCreateProfile(UserChangeForm):
+class CustomUserCreateProfile(ModelForm):
     class Meta:
         model = CustomUser
-        fields = ('first_name', 'last_name', 'bio')
+        fields = ('first_name', 'last_name', 'bio', 'avatar')
 
 
 class CustomUserChangeForm(UserChangeForm):
