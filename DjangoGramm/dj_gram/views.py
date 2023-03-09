@@ -1,4 +1,5 @@
 from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.urls import reverse_lazy
 from django.utils.encoding import force_bytes, force_str
@@ -9,7 +10,6 @@ from django.http import HttpResponse
 from django.core.mail import send_mail
 from django.contrib.sites.shortcuts import get_current_site
 
-
 from .models import *
 from .forms import *
 from .tokens import account_activation_token
@@ -19,6 +19,7 @@ def index(request):
     return HttpResponse('Home page')
 
 
+@login_required
 def add_post(request):
     post_form = PostForm()
     image_form = ImageForm()
@@ -75,12 +76,12 @@ def registration(request):
 
 
 def fill_profile(request, uidb64, umailb64, token):
-    if request.method == 'POST':
-        if verify_token(uidb64, umailb64, token):
+    if verify_token(uidb64, umailb64, token):
+        if request.method == 'POST':
             user_pk = force_str(urlsafe_base64_decode(uidb64))
             user = get_object_or_404(CustomUser, pk=user_pk)
 
-            form = CustomUserCreateProfile(request.POST, instance=user)
+            form = CustomUserCreateProfile(request.POST, request.FILES, instance=user)
             if form.is_valid():
                 user = form.save(commit=False)
                 user.is_active = True
@@ -88,14 +89,17 @@ def fill_profile(request, uidb64, umailb64, token):
 
                 return redirect('login')
         else:
-            return HttpResponse('Wrong verification key')
+            form = CustomUserCreateProfile(request.POST)
+
+        context = {'form': form}
+        return render(request, 'dj_gram/create_profile.html', context)
 
     else:
-        form = CustomUserCreateProfile(request.POST)
+        return HttpResponse('Wrong verification key')
 
-    context = {'form': form}
-    return render(request, 'dj_gram/create_profile.html', context)
 
+def feed(request):
+    pass
 
 
 def create_registration_link(request, user):
@@ -122,15 +126,8 @@ def verify_token(uidb64, umailb64, token):
     else:
         return False
 
-def login(request):
-    return HttpResponse('Log in')
-
-
 
 
 def feed(request):
     pass
 
-
-def profile(request, profile_id):
-    pass

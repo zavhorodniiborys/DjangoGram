@@ -37,8 +37,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'dj_gram.apps.BasicAppConfig',
+    'dj_gram.apps.DjGram',
+    'authentication.apps.AuthenticationConfig',
 ]
+
+LOGIN_URL = 'authentication:login'
 
 AUTH_USER_MODEL = 'dj_gram.CustomUser'
 

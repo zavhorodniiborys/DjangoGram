@@ -9,5 +9,4 @@ urlpatterns = [
     path('registration/', views.registration),
     path('add_post/', views.add_post),
     path('confirm_email/<uidb64>/<umailb64>/<token>/', views.fill_profile, name='confirmation'),
-    path('login/', views.login, name='login')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class DjGram(AppConfig):
+class AuthenticationConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'dj_gram'
+    name = 'authentication'
