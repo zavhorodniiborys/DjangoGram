@@ -13,11 +13,11 @@ def login_user(request):
         if user is not None:
             login(request, user)
             # message
-            return redirect(request.GET.get('next', ''))
-            pass
+            return redirect(request.GET.get('next', 'dj_gram:feed'))
 
         else:
             # Return an 'invalid login' error message.
+            print('Wrong')
             pass
     else:
         return render(request, 'authentication/login.html', {'form': AuthenticationForm})

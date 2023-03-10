@@ -1,7 +1,7 @@
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.views.generic.edit import CreateView
@@ -87,7 +87,7 @@ def fill_profile(request, uidb64, umailb64, token):
                 user.is_active = True
                 user.save()
 
-                return redirect('login')
+                return redirect(reverse('authentication:login'))
         else:
             form = CustomUserCreateProfile(request.POST)
 
@@ -99,7 +99,7 @@ def fill_profile(request, uidb64, umailb64, token):
 
 
 def feed(request):
-    pass
+    return render(request, 'dj_gram/feed.html')
 
 
 def create_registration_link(request, user):
@@ -125,9 +125,3 @@ def verify_token(uidb64, umailb64, token):
 
     else:
         return False
-
-
-
-def feed(request):
-    pass
-
