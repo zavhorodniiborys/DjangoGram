@@ -51,6 +51,12 @@ class Post(models.Model):
     tag = models.TextField(max_length=256)
     date = models.DateTimeField(auto_now_add=True)
 
+    def get_likes(self):
+        return self.votes.filter(vote=1).count()
+
+    def get_dislikes(self):
+        return self.votes.filter(vote=0).count()
+
     def __str__(self):
         return str(self.id)
 # todo localtime
@@ -66,5 +72,5 @@ class Vote(models.Model):
 
 
 class Images(models.Model):
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, related_name='images', on_delete=models.CASCADE)
     image = models.ImageField(upload_to=f'images/post/{post}')

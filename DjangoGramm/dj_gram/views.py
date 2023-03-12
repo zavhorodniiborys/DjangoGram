@@ -30,7 +30,7 @@ def add_post(request):
         images = request.FILES.getlist('image')
 
         if post_form.is_valid() and image_form.is_valid():
-            user = CustomUser.objects.get(pk=1)
+            user = CustomUser.objects.get(pk=request.user.id)
 
             post_tags = post_form.cleaned_data['tag']
             post = Post.objects.create(user=user, tag=post_tags)
@@ -38,9 +38,10 @@ def add_post(request):
             for image in images:
                 Images.objects.create(post=post, image=image)
 
-    context = {'post_form': post_form, 'image_form': image_form}
-
-    return render(request, 'dj_gram/add_post.html', context)
+        return redirect(reverse('dj_gram:feed'))
+    else:
+        context = {'post_form': post_form, 'image_form': image_form}
+        return render(request, 'dj_gram/add_post.html', context)
 
 
 def registration(request):
@@ -98,8 +99,27 @@ def fill_profile(request, uidb64, umailb64, token):
         return HttpResponse('Wrong verification key')
 
 
+@login_required
 def feed(request):
-    return render(request, 'dj_gram/feed.html')
+    posts = Post.objects.all()
+    # todo pagination
+
+    # for post in posts:
+    #     print(post.votes.filter(post.votes.vote == 1).count())
+    return render(request, 'dj_gram/feed.html', {'posts': posts})
+
+
+@login_required
+def view_post(request, post_id):
+    post = Post.objects.get(pk=post_id)
+    return render(request, 'dj_gram/view_post.html', {'post': post})
+
+
+def vote(request, post_id, vote):
+    post = Post.objects.get(pk=post_id)
+    vote = Vote.objects.create(profile=request.user, post=post, vote=vote)
+    posts = Post.objects.all()
+    return render(request, 'dj_gram/feed.html', {'posts': posts})
 
 
 def create_registration_link(request, user):

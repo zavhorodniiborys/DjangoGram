@@ -2,6 +2,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
+from django.urls import reverse
 
 
 def login_user(request):
@@ -18,11 +19,11 @@ def login_user(request):
         else:
             # Return an 'invalid login' error message.
             print('Wrong')
-            pass
+            return HttpResponse('Wrong email/password')
     else:
         return render(request, 'authentication/login.html', {'form': AuthenticationForm})
 
 
 def logout_user(request):
     logout(request)
-    return HttpResponse('Logget out')
+    return redirect(reverse('authentication:login_user'))

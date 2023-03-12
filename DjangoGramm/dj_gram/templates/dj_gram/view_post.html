@@ -1,0 +1,14 @@
+{% extends "./base.html" %}
+{% block title %} Post {{post.id}} {% endblock %}
+{% block content %}
+{% if post %}
+    {{post.user.avatar}} {{post.user.first_name}} {{post.user.last_name}}
+    {% for image in post.images.all %}
+        <img src="{{image.image.url}}" width="500px" height="500px">
+    {% endfor %}
+        <a href="{% url 'dj_gram:vote' post.id 1 %}"><button>like</button></a> {{post.get_likes}}
+        <a href="{% url 'dj_gram:vote' post.id 0 %}"><button>dislike</button></a> {{post.get_dislikes}}
+{% else %}
+NO POST
+{% endif %}
+{% endblock %}
