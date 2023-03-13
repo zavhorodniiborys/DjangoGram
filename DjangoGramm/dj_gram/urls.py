@@ -10,7 +10,7 @@ urlpatterns = [
     path('', views.index),
     path('registration/', views.registration),
     path('add_post/', views.add_post),
-    path('feed/', views.feed, name='feed'),
+    path('feed/', views.Feed.as_view(), name='feed'),
     path('post/<int:post_id>', views.view_post, name='view_post'),
     path('post/<int:post_id>/vote/<int:vote>', views.vote, name='vote'),
     path('confirm_email/<uidb64>/<umailb64>/<token>/', views.fill_profile, name='confirmation'),

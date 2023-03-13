@@ -1,9 +1,11 @@
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
+from django.db import IntegrityError
 from django.urls import reverse_lazy, reverse
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.views.generic import ListView
 from django.views.generic.edit import CreateView
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
@@ -46,7 +48,7 @@ def add_post(request):
 
 def registration(request):
     if request.method == 'POST':
-        form = CustomUserRegistrationMail(request.POST)  # maybe it`s better don`t attach form to model todo
+        form = CustomUserCreationForm(request.POST)  # maybe it`s better don`t attach form to model todo
         if form.is_valid():
             user = form.save(commit=False)
             user.is_active = False
@@ -82,7 +84,7 @@ def fill_profile(request, uidb64, umailb64, token):
             user_pk = force_str(urlsafe_base64_decode(uidb64))
             user = get_object_or_404(CustomUser, pk=user_pk)
 
-            form = CustomUserCreateProfile(request.POST, request.FILES, instance=user)
+            form = CustomUserFillForm(request.POST, request.FILES, instance=user)
             if form.is_valid():
                 user = form.save(commit=False)
                 user.is_active = True
@@ -90,7 +92,7 @@ def fill_profile(request, uidb64, umailb64, token):
 
                 return redirect(reverse('authentication:login'))
         else:
-            form = CustomUserCreateProfile(request.POST)
+            form = CustomUserFillForm(request.POST)
 
         context = {'form': form}
         return render(request, 'dj_gram/create_profile.html', context)
@@ -99,14 +101,12 @@ def fill_profile(request, uidb64, umailb64, token):
         return HttpResponse('Wrong verification key')
 
 
-@login_required
-def feed(request):
-    posts = Post.objects.all()
-    # todo pagination
+class Feed(ListView):
+    model = Post
+    context_object_name = 'posts'
+    template_name = 'dj_gram/feed.html'
 
-    # for post in posts:
-    #     print(post.votes.filter(post.votes.vote == 1).count())
-    return render(request, 'dj_gram/feed.html', {'posts': posts})
+    paginate_by = 2
 
 
 @login_required
@@ -117,9 +117,18 @@ def view_post(request, post_id):
 
 def vote(request, post_id, vote):
     post = Post.objects.get(pk=post_id)
-    vote = Vote.objects.create(profile=request.user, post=post, vote=vote)
-    posts = Post.objects.all()
-    return render(request, 'dj_gram/feed.html', {'posts': posts})
+    try:
+        Vote.objects.create(profile=request.user, post=post, vote=vote)
+    except IntegrityError:
+        user_vote = Vote.objects.get(post=post, profile=request.user)
+
+        if user_vote.vote == vote:
+            user_vote.delete()
+        else:
+            user_vote.delete()
+            Vote.objects.create(profile=request.user, post=post, vote=vote)
+
+    return redirect(request.META.get('HTTP_REFERER'))
 
 
 def create_registration_link(request, user):

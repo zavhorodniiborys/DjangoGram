@@ -2,6 +2,7 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None):
         """
@@ -36,7 +37,7 @@ class CustomUserManager(BaseUserManager):
 
 class CustomUser(AbstractUser):
     username = None
-    email = models.EmailField(verbose_name='email address', unique=True)
+    email = models.EmailField(verbose_name='email address', unique=True, max_length=255)
     bio = models.TextField(max_length=512)
     avatar = models.ImageField(upload_to='images/avatars/')
 
@@ -48,7 +49,7 @@ class CustomUser(AbstractUser):
 
 class Post(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='posts')
-    tag = models.TextField(max_length=256)
+    tag = models.TextField(max_length=255)
     date = models.DateTimeField(auto_now_add=True)
 
     def get_likes(self):
@@ -74,3 +75,7 @@ class Vote(models.Model):
 class Images(models.Model):
     post = models.ForeignKey(Post, related_name='images', on_delete=models.CASCADE)
     image = models.ImageField(upload_to=f'images/post/{post}')
+
+    class Meta:
+        verbose_name = 'image'
+        verbose_name_plural = 'images'

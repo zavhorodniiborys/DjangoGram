@@ -22,18 +22,23 @@ class ImageForm(ModelForm):
             'image': ClearableFileInput(attrs={'multiple': True}),
         }
 
-
-class CustomUserRegistrationMail(ModelForm):
-    class Meta:
-        model = CustomUser
-        fields = ('email',)
+    # def clean_image(self):
+    #     image = self.cleaned_data.get('image')
+    #
+    #     if image:
+    #         if image._height > 1920 or image._width > 1080:
+    #             raise ValidationError("Height or Width is larger than what is allowed")
+    #
+    #         return image
+    #
+    #     else:
+    #         raise ValidationError("No image found")
 
 
 class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = CustomUser
         fields = ('email',)
-        # exclude = ('password2',)
 
     def __init__(self, *args, **kwargs):
         super(UserCreationForm, self).__init__(*args, **kwargs)
@@ -41,7 +46,7 @@ class CustomUserCreationForm(UserCreationForm):
         del self.fields['password2']
 
 
-class CustomUserCreateProfile(ModelForm):
+class CustomUserFillForm(ModelForm):
     password1 = forms.CharField(widget=PasswordInput())
     password2 = forms.CharField(widget=PasswordInput())
 
@@ -74,8 +79,9 @@ class CustomUserCreateProfile(ModelForm):
         return user
 
 
-class CustomUserChangeForm(UserChangeForm):
+class CustomUserAdminCreateForm(UserChangeForm):
 
     class Meta:
-        fields = '__all__'
-        # exclude = ('email',)
+        model = CustomUser
+        fields = ('email',)
+

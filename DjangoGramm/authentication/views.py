@@ -18,7 +18,6 @@ def login_user(request):
 
         else:
             # Return an 'invalid login' error message.
-            print('Wrong')
             return HttpResponse('Wrong email/password')
     else:
         return render(request, 'authentication/login.html', {'form': AuthenticationForm})
