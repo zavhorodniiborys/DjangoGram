@@ -6,7 +6,7 @@ from django.urls import reverse_lazy, reverse
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.views.generic import ListView
-from django.views.generic.edit import CreateView
+from django.views.generic.edit import CreateView, FormView
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.core.mail import send_mail
@@ -32,18 +32,47 @@ def add_post(request):
         images = request.FILES.getlist('image')
 
         if post_form.is_valid() and image_form.is_valid():
-            user = CustomUser.objects.get(pk=request.user.id)
 
             post_tags = post_form.cleaned_data['tag']
-            post = Post.objects.create(user=user, tag=post_tags)
+            post = Post.objects.create(user=request.user)
+
+            for tag in post_tags:
+                tag = Tag.objects.get(name=tag)
+
+                if not tag:
+                    tag = Tag.objects.create(name=tag)
+                post.tag.add(tag)
 
             for image in images:
                 Images.objects.create(post=post, image=image)
 
-        return redirect(reverse('dj_gram:feed'))
-    else:
-        context = {'post_form': post_form, 'image_form': image_form}
-        return render(request, 'dj_gram/add_post.html', context)
+            return redirect(reverse('dj_gram:feed'))
+
+    context = {'post_form': post_form, 'image_form': image_form}
+    return render(request, 'dj_gram/add_post.html', context)
+
+
+class AddTag(FormView):
+    template_name = 'dj_gram/add_tag.html'
+    form_class = TagForm
+
+    def form_valid(self, form):
+        name = form.cleaned_data['name']
+        print(name)
+        post = Post.objects.get(pk=self.kwargs['post_id'])  # maybe it`s better to check if user is the author of post
+        print('First')
+        tag = Tag.objects.get(name=name)
+        if not tag:
+            tag = Tag.objects.create(name=tag)
+
+        print(tag)
+        print('TEST')
+        post.tag.add(tag)
+        print('HERE')
+        return super(AddTag, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('dj_gram:view_post', kwargs={'post_id': self.kwargs['post_id']})
 
 
 def registration(request):

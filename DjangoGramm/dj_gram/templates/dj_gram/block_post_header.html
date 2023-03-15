@@ -1,0 +1,10 @@
+<div class="post-header">
+    <div>
+        {% if post.user.avatar %}
+        <img src="{{post.user.avatar.url}}" width="30px" height="30px">
+        {% endif %}
+        {{post.user.first_name}}
+        {{post.user.last_name}}
+        {{post.date}}
+    </div>
+</div>

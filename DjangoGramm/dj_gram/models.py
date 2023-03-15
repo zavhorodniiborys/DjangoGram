@@ -49,8 +49,8 @@ class CustomUser(AbstractUser):
 
 class Post(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='posts')
-    tag = models.TextField(max_length=255)
     date = models.DateTimeField(auto_now_add=True)
+    tag = models.ManyToManyField(to='Tag', related_name='posts', blank=True)
 
     def get_likes(self):
         return self.votes.filter(vote=1).count()
@@ -60,6 +60,10 @@ class Post(models.Model):
 
     def __str__(self):
         return str(self.id)
+
+    class Meta:
+        ordering = ['-id']
+
 # todo localtime
 
 
@@ -79,3 +83,11 @@ class Images(models.Model):
     class Meta:
         verbose_name = 'image'
         verbose_name_plural = 'images'
+
+
+class Tag(models.Model):
+    name = models.CharField(max_length=32, unique=True)
+
+    def validate_hashtags(self):
+        pass
+

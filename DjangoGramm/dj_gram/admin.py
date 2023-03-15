@@ -29,4 +29,4 @@ class CustomUserAdmin(UserAdmin):
 
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Post, PostAdmin)
-admin.site.register([Vote, Images])
+admin.site.register([Vote, Images, Tag])

@@ -2,15 +2,57 @@ from django import forms
 from django.contrib.auth import password_validation
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm, PasswordChangeForm
 from django.core.exceptions import ValidationError
-from django.forms import ModelForm, ClearableFileInput, ImageField, PasswordInput
+from django.forms import ModelForm, ClearableFileInput, ImageField, PasswordInput, ModelMultipleChoiceField, CharField
 
 from .models import *
 
 
 class PostForm(ModelForm):
+    tag = CharField(widget=forms.Textarea, max_length=32)
+
     class Meta:
         model = Post
         fields = ['tag']
+
+    def clean_tag(self):
+        tags = self.cleaned_data.get('tag')
+        clear_tags = self.parse_tags(tags)
+        if clear_tags:
+            return clear_tags
+
+        return tags
+
+    def parse_tags(self, tags: str):
+        if '#' in tags:
+            clear_tags = set()
+            tags = tags.replace(',', '').replace('.', '').split()
+
+            for tag in tags:
+                if tag.startswith('#'):
+                    clear_tags.add(tag)
+
+            if clear_tags:
+                return clear_tags
+            self.add_error('tag', ValidationError('No tags were found. Tags must start with "#".'))
+
+        else:
+            self.add_error('tag', ValidationError('No tags were found. Tags must start with "#".'))
+
+
+class TagForm(ModelForm):
+    class Meta:
+        model = Tag
+        fields = ['name']
+        extra_kwargs = {
+            'name': {'validators': []},
+        }
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if not name.startswith('#'):
+            self.add_error('name', ValidationError('Tag must starts with "#".'))
+
+        return name
 
 
 class ImageForm(ModelForm):

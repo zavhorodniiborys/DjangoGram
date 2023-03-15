@@ -1,0 +1,7 @@
+{% block tags %}
+{% if post.tag %}
+    {% for tag in post.tag.all %}
+        {{tag.name}} </br>
+    {% endfor %}
+{% endif %}
+{% endblock %}
