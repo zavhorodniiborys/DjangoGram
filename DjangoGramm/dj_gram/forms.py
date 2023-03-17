@@ -1,14 +1,16 @@
+from PIL import Image
 from django import forms
 from django.contrib.auth import password_validation
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm, PasswordChangeForm
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm, ClearableFileInput, ImageField, PasswordInput, ModelMultipleChoiceField, CharField
 
+
 from .models import *
 
 
-class PostForm(ModelForm):
-    tag = CharField(widget=forms.Textarea, max_length=32)
+class MultipleTagsForm(ModelForm):
+    tag = CharField(widget=forms.Textarea, max_length=32, required=False)
 
     class Meta:
         model = Post
@@ -16,11 +18,12 @@ class PostForm(ModelForm):
 
     def clean_tag(self):
         tags = self.cleaned_data.get('tag')
+        if not tags:
+            return tags
+
         clear_tags = self.parse_tags(tags)
         if clear_tags:
             return clear_tags
-
-        return tags
 
     def parse_tags(self, tags: str):
         if '#' in tags:
@@ -43,16 +46,16 @@ class TagForm(ModelForm):
     class Meta:
         model = Tag
         fields = ['name']
-        extra_kwargs = {
-            'name': {'validators': []},
-        }
 
     def clean_name(self):
         name = self.cleaned_data.get('name')
-        if not name.startswith('#'):
-            self.add_error('name', ValidationError('Tag must starts with "#".'))
+        if not name.startswith('#') or len(name) == 1:
+            self.add_error('name', ValidationError('Tag must starts with "#" and contain characters.'))
 
-        return name
+        return name.split()[0]
+
+    def clean(self):
+        pass
 
 
 class ImageForm(ModelForm):
@@ -63,18 +66,6 @@ class ImageForm(ModelForm):
         widgets = {
             'image': ClearableFileInput(attrs={'multiple': True}),
         }
-
-    # def clean_image(self):
-    #     image = self.cleaned_data.get('image')
-    #
-    #     if image:
-    #         if image._height > 1920 or image._width > 1080:
-    #             raise ValidationError("Height or Width is larger than what is allowed")
-    #
-    #         return image
-    #
-    #     else:
-    #         raise ValidationError("No image found")
 
 
 class CustomUserCreationForm(UserCreationForm):

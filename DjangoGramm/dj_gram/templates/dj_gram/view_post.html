@@ -4,7 +4,7 @@
 {% if post %}
     {{post.user.avatar}} {{post.user.first_name}} {{post.user.last_name}}
     {% for image in post.images.all %}
-        <img src="{{image.image.url}}" width="500px" height="500px">
+        <img src="{{image.image.url}}" width="1280px" height="720px">
     {% endfor %}
 
     {% include './block_tags.html' %}

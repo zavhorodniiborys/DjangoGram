@@ -23,11 +23,11 @@ def index(request):
 
 @login_required
 def add_post(request):
-    post_form = PostForm()
+    post_form = MultipleTagsForm()
     image_form = ImageForm()
 
     if request.method == 'POST':
-        post_form = PostForm(request.POST)
+        post_form = MultipleTagsForm(request.POST)
         image_form = ImageForm(request.POST, request.FILES)
         images = request.FILES.getlist('image')
 
@@ -43,8 +43,11 @@ def add_post(request):
                     tag = Tag.objects.create(name=tag)
                 post.tag.add(tag)
 
-            for image in images:
-                Images.objects.create(post=post, image=image)
+            Images.objects.create(post=post, image=images[0])
+            # image_form.save()
+            # for image in images:
+            #     image.save()
+            #     Images.objects.create(post=post, image=image)
 
             return redirect(reverse('dj_gram:feed'))
 
@@ -58,17 +61,14 @@ class AddTag(FormView):
 
     def form_valid(self, form):
         name = form.cleaned_data['name']
-        print(name)
         post = Post.objects.get(pk=self.kwargs['post_id'])  # maybe it`s better to check if user is the author of post
-        print('First')
-        tag = Tag.objects.get(name=name)
-        if not tag:
-            tag = Tag.objects.create(name=tag)
+        tag = Tag.objects.filter(name=name).first()
 
-        print(tag)
-        print('TEST')
+        if not tag:
+            print(name)
+            tag = Tag.objects.create(name=name)
+
         post.tag.add(tag)
-        print('HERE')
         return super(AddTag, self).form_valid(form)
 
     def get_success_url(self):

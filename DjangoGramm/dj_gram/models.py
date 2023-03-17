@@ -1,5 +1,10 @@
+import os
+from io import BytesIO
+
+from PIL import Image
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import AbstractUser
+from django.core.files.base import ContentFile
 from django.db import models
 
 
@@ -83,6 +88,24 @@ class Images(models.Model):
     class Meta:
         verbose_name = 'image'
         verbose_name_plural = 'images'
+    
+    def save(self, *args, **kwargs):
+        acceptable_image_size = (1280, 720)
+
+        image = Image.open(self.image).convert('RGB')
+        image_name = self.image.name
+
+        image.thumbnail(acceptable_image_size)
+
+        temp = BytesIO()  # because thumbnail must be saved if binary mode
+        image.save(temp, 'jpeg')
+        temp.seek(0)  # sets the file's current position
+
+        self.image.save(image_name, ContentFile(temp.read()), save=False)  # ContentFile reads file as string of bytes
+
+        super(Images, self).save(*args, **kwargs)
+
+
 
 
 class Tag(models.Model):
