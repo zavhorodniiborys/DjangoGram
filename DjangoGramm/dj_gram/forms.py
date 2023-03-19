@@ -45,7 +45,7 @@ class MultipleTagsForm(ModelForm):
 class TagForm(ModelForm):
     class Meta:
         model = Tag
-        fields = ['name']
+        fields = ('name',)
 
     def clean_name(self):
         name = self.cleaned_data.get('name')
@@ -55,28 +55,29 @@ class TagForm(ModelForm):
         return name.split()[0]
 
     def clean(self):
-        pass
+        self._validate_unique = False
+        return self.cleaned_data
 
 
 class ImageForm(ModelForm):
     class Meta:
         model = Images
-        fields = ['image']
+        fields = ('image',)
 
         widgets = {
             'image': ClearableFileInput(attrs={'multiple': True}),
         }
 
 
-class CustomUserCreationForm(UserCreationForm):
+class CustomUserCreationForm(ModelForm):
     class Meta:
         model = CustomUser
         fields = ('email',)
 
-    def __init__(self, *args, **kwargs):
-        super(UserCreationForm, self).__init__(*args, **kwargs)
-        del self.fields['password1']
-        del self.fields['password2']
+    # def __init__(self, *args, **kwargs):
+    #     super(UserCreationForm, self).__init__(*args, **kwargs)
+    #     del self.fields['password1']
+    #     del self.fields['password2']
 
 
 class CustomUserFillForm(ModelForm):

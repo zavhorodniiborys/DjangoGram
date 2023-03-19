@@ -6,7 +6,7 @@
     <title>{% block title %}{% endblock %}</title>
   </head>
   <body style="background-color:green;">
-    <div style="width: 750px; margin: auto; background-color: red;">
+    <div style="margin: auto; background-color: red;">
       <nav style="background-color: gray;">
         <ul style="padding: 10px;">
           <li style="display: inline;"><a href="{% url 'dj_gram:feed' %}">FEED</a></li>
@@ -15,7 +15,7 @@
           <li style="display: inline; float:right"><a href="{% url 'authentication:logout_user' %}">LOGOUT</a></li>
         </ul>
       </nav>
-      <main>
+      <main style="margin: auto;">
         {% block content %}
         {% endblock %}
       </main>

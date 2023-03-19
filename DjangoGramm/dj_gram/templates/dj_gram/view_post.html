@@ -2,9 +2,10 @@
 {% block title %} Post {{post.id}} {% endblock %}
 {% block content %}
 {% if post %}
-    {{post.user.avatar}} {{post.user.first_name}} {{post.user.last_name}}
+    {% include './block_post_header.html' %}
     {% for image in post.images.all %}
         <img src="{{image.image.url}}" width="1280px" height="720px">
+        </br>
     {% endfor %}
 
     {% include './block_tags.html' %}

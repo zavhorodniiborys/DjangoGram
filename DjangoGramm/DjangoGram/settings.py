@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'authentication.apps.AuthenticationConfig',
 ]
 
-LOGIN_URL = 'authentication:login'
+LOGIN_URL = 'authentication:login_user'
 
 AUTH_USER_MODEL = 'dj_gram.CustomUser'
 

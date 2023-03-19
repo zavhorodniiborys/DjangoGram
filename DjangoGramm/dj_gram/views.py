@@ -36,14 +36,16 @@ def add_post(request):
             post_tags = post_form.cleaned_data['tag']
             post = Post.objects.create(user=request.user)
 
-            for tag in post_tags:
-                tag = Tag.objects.get(name=tag)
+            for tag_name in post_tags:
+                tag = Tag.objects.filter(name=tag_name).first()
 
                 if not tag:
-                    tag = Tag.objects.create(name=tag)
+                    tag = Tag.objects.create(name=tag_name)
                 post.tag.add(tag)
 
-            Images.objects.create(post=post, image=images[0])
+            for image in images[:9]:
+                Images.objects.create(post=post, image=image)
+
             # image_form.save()
             # for image in images:
             #     image.save()
@@ -65,7 +67,6 @@ class AddTag(FormView):
         tag = Tag.objects.filter(name=name).first()
 
         if not tag:
-            print(name)
             tag = Tag.objects.create(name=name)
 
         post.tag.add(tag)
@@ -119,7 +120,7 @@ def fill_profile(request, uidb64, umailb64, token):
                 user.is_active = True
                 user.save()
 
-                return redirect(reverse('authentication:login'))
+                return redirect(reverse('authentication:login_user'))
         else:
             form = CustomUserFillForm(request.POST)
 

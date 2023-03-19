@@ -42,6 +42,8 @@ class CustomUserManager(BaseUserManager):
 
 class CustomUser(AbstractUser):
     username = None
+    first_name = models.CharField(max_length=32)
+    last_name = models.CharField(max_length=32)
     email = models.EmailField(verbose_name='email address', unique=True, max_length=255)
     bio = models.TextField(max_length=512)
     avatar = models.ImageField(upload_to='images/avatars/')
@@ -68,9 +70,6 @@ class Post(models.Model):
 
     class Meta:
         ordering = ['-id']
-
-# todo localtime
-
 
 class Vote(models.Model):
     profile = models.ForeignKey(CustomUser, related_name='votes', on_delete=models.CASCADE)
@@ -104,8 +103,6 @@ class Images(models.Model):
         self.image.save(image_name, ContentFile(temp.read()), save=False)  # ContentFile reads file as string of bytes
 
         super(Images, self).save(*args, **kwargs)
-
-
 
 
 class Tag(models.Model):
