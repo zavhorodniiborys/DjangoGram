@@ -9,7 +9,7 @@ from django.db import models
 
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, email, password=None):
+    def create_user(self, email, password=None, **extra_fields):
         """
         Creates and saves a User with the given email, date of
         birth and password.
@@ -17,8 +17,12 @@ class CustomUserManager(BaseUserManager):
         if not email:
             raise ValueError('Users must have an email address')
 
+        extra_fields.setdefault("is_staff", False)
+        extra_fields.setdefault("is_superuser", False)
+
         user = self.model(
             email=self.normalize_email(email),
+            **extra_fields
         )
         user.set_password(password)
         user.save(using=self._db)
@@ -71,6 +75,7 @@ class Post(models.Model):
     class Meta:
         ordering = ['-id']
 
+
 class Vote(models.Model):
     profile = models.ForeignKey(CustomUser, related_name='votes', on_delete=models.CASCADE)
     post = models.ForeignKey(Post, related_name='votes', on_delete=models.CASCADE)
@@ -96,9 +101,9 @@ class Images(models.Model):
 
         image.thumbnail(acceptable_image_size)
 
-        temp = BytesIO()  # because thumbnail must be saved if binary mode
+        temp = BytesIO()  # because thumbnail must be saved in binary mode
         image.save(temp, 'jpeg')
-        temp.seek(0)  # sets the file's current position
+        temp.seek(0)  # sets the file's start position
 
         self.image.save(image_name, ContentFile(temp.read()), save=False)  # ContentFile reads file as string of bytes
 
