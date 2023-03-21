@@ -17,6 +17,7 @@ class CustomUserManager(BaseUserManager):
         if not email:
             raise ValueError('Users must have an email address')
 
+        extra_fields.setdefault("is_active", False)
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
 
@@ -116,6 +117,3 @@ class Tag(models.Model):
     def save(self, *args, **kwargs):
         self.name = self.name.lower()
         super(Tag, self).save(*args, **kwargs)
-
-    def validate_hashtags(self, tag: str):
-        pass
