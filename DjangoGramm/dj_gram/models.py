@@ -113,6 +113,9 @@ class Images(models.Model):
 class Tag(models.Model):
     name = models.CharField(max_length=32, unique=True)
 
-    def validate_hashtags(self):
-        pass
+    def save(self, *args, **kwargs):
+        self.name = self.name.lower()
+        super(Tag, self).save(*args, **kwargs)
 
+    def validate_hashtags(self, tag: str):
+        pass
