@@ -96,7 +96,6 @@ class Images(models.Model):
     
     def save(self, *args, **kwargs):
         acceptable_image_size = (1280, 720)
-
         image = Image.open(self.image).convert('RGB')
         image_name = self.image.name
 
@@ -107,7 +106,6 @@ class Images(models.Model):
         temp.seek(0)  # sets the file's start position
 
         self.image.save(image_name, ContentFile(temp.read()), save=False)  # ContentFile reads file as string of bytes
-
         super(Images, self).save(*args, **kwargs)
 
 
