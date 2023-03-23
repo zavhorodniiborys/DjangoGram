@@ -87,8 +87,11 @@ class Vote(models.Model):
 
 
 class Images(models.Model):
+    def upload_path(self, filename):
+        return os.path.join('images', 'post', str(self.post.id), filename)
+
     post = models.ForeignKey(Post, related_name='images', on_delete=models.CASCADE)
-    image = models.ImageField(upload_to=f'images/post/{post}')
+    image = models.ImageField(upload_to=upload_path)
 
     class Meta:
         verbose_name = 'image'

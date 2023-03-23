@@ -2,7 +2,9 @@ import shutil
 from PIL import Image as Img
 from django.core.files.uploadedfile import SimpleUploadedFile, TemporaryUploadedFile, InMemoryUploadedFile
 from django.test import TestCase, override_settings
+
 from ..models import *
+from .conf import create_test_image
 
 TEST_DIR = 'dj_gram/test/test_data'
 
@@ -139,45 +141,19 @@ class TestImages(TestCase):
     @classmethod
     @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def setUpTestData(cls):
-        image_name = 'IAMGE'
-        # image = cls.create_image(cls, image_name)
         user = CustomUser.objects.create_user(email='test@test.test')
         post = Post.objects.create(user=user)
 
-        Images.objects.create(post=post, image=cls.create_test_image())
-
-        # print(image.name)
-
-        # image.close()
-        # print(image)
-        #  https://stackoverflow.com/questions/26298821/django-testing-model-with-imagefield
-        # Images.objects.create(image=image.url)
-
-    @staticmethod
-    def create_test_image():
-        image = Image.new('RGB', size=(100, 100))
-        temp = BytesIO()
-        image.save(temp, 'jpeg')
-        image.close()
-
-        temp_image = InMemoryUploadedFile(file=temp, field_name=None, name='IMAGE.jpg',
-                                          content_type='image/jpeg',
-                                          size=image.size, charset=None)
-        return temp_image
+        Images.objects.create(post=post, image=create_test_image(size=(100, 100)))
 
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree(TEST_DIR, ignore_errors=True)
         super().tearDownClass()
 
-    def test_foo(self):
-        pass
-
     def test_image_path(self):
-        image_path = Images._meta.get_field('image').upload_to
-        print(image_path)
-
-        self.assertEqual(image_path, '/media/images/post/IMAGE.jpg')
+        image_path = Images.objects.get(id=1).image.url
+        self.assertEqual(image_path, '/media/images/post/1/IMAGE.jpg')
 
     def test_image_verbose_name(self):
         image_verbose_name = Images._meta.verbose_name
@@ -186,15 +162,15 @@ class TestImages(TestCase):
     def test_image_verbose_name_plural(self):
         image_verbose_name_plural = Images._meta.verbose_name_plural
         self.assertEqual(image_verbose_name_plural, 'images')
-    #
-    # # @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
-    # # def test_image_save(self):
-    # #     image = Img.new('RGB', (500, 500))
-    # #     image.show()
-    # #     image.save()
-    #
-    #
-    #
+
+    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
+    def test_image_create_thumbnail(self):
+        really_big_image = create_test_image((2000, 1500))
+        post = Post.objects.get(id=1)
+        image = Images.objects.create(post=post, image=really_big_image).image
+        image_thumbnail_size = image.width, image.height
+
+        self.assertEqual(image_thumbnail_size, (960, 720))
 
 
 class TestVote(TestCase):
