@@ -163,6 +163,7 @@ class TestImages(TestCase):
         image_verbose_name_plural = Images._meta.verbose_name_plural
         self.assertEqual(image_verbose_name_plural, 'images')
 
+    #  testing save
     @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_image_create_thumbnail(self):
         really_big_image = create_test_image((2000, 1500))
@@ -171,6 +172,15 @@ class TestImages(TestCase):
         image_thumbnail_size = image.width, image.height
 
         self.assertEqual(image_thumbnail_size, (960, 720))
+    
+    def test_count_images_in_post(self):
+        post = Post.objects.get(id=1)
+        for _ in range(8):
+            Images.objects.create(post=post, image=create_test_image(size=(100, 100)))
+        
+        with self.assertRaises(ValidationError):
+            image = Images(post=post, image=create_test_image(size=(100, 100)))
+            image.save()
 
 
 class TestVote(TestCase):

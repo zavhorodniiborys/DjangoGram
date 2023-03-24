@@ -41,6 +41,31 @@ class MultipleTagsForm(ModelForm):
             self.add_error('tag', ValidationError('No tags were found. Tags must start with "#".'))
 
 
+class MultipleTagsForm(ModelForm):
+    class Meta:
+        model = Tags
+        fields = ('name',)
+
+        widgets = {
+            'name': Textarea(attrs={'size': 10}),
+        }
+    
+    def clean_name(self):
+        tags = self.cleaned_data['name']
+
+    
+    def save(self, post):
+        for _tag in self.clean_name(self):
+            if not Tag.objects.filter(name=_tag):
+                tag = Tag.objects.get(name=_tag)
+            else:
+                tag = Tag(name=_tag)
+            
+            tag.post.add(post)
+            tag.save()
+
+
+
 class TagForm(ModelForm):
     class Meta:
         model = Tag

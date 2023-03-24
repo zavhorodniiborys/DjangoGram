@@ -97,7 +97,14 @@ class Images(models.Model):
         verbose_name = 'image'
         verbose_name_plural = 'images'
     
+    #def validate_count_images_in_post(self, max_count=10):
+     #   images_count = self.post.images.all().count()
+      #  if images_count >= max_count:
+       #     raise ValidationError(f'Post can\'t have more than {max_count} images')
+    
     def save(self, *args, **kwargs):
+        #self.validate_count_images_in_post()
+
         acceptable_image_size = (1280, 720)
         image = Image.open(self.image).convert('RGB')
         image_name = self.image.name
