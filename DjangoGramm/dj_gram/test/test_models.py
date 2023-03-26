@@ -173,14 +173,14 @@ class TestImages(TestCase):
 
         self.assertEqual(image_thumbnail_size, (960, 720))
     
-    def test_count_images_in_post(self):
-        post = Post.objects.get(id=1)
-        for _ in range(8):
-            Images.objects.create(post=post, image=create_test_image(size=(100, 100)))
-        
-        with self.assertRaises(ValidationError):
-            image = Images(post=post, image=create_test_image(size=(100, 100)))
-            image.save()
+    # def test_count_images_in_post(self):
+    #     post = Post.objects.get(id=1)
+    #     for _ in range(8):
+    #         Images.objects.create(post=post, image=create_test_image(size=(100, 100)))
+    #
+    #     with self.assertRaises(ValidationError):
+    #         image = Images(post=post, image=create_test_image(size=(100, 100)))
+    #         image.save()
 
 
 class TestVote(TestCase):

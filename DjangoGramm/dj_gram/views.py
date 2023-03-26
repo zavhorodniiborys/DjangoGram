@@ -23,37 +23,21 @@ def index(request):
 
 @login_required
 def add_post(request):
-    post_form = MultipleTagsForm()
+    multiple_tags_form = MultipleTagsForm()
     image_form = ImageForm()
 
     if request.method == 'POST':
-        post_form = MultipleTagsForm(request.POST)
+        multiple_tags_form = MultipleTagsForm(request.POST)
         image_form = ImageForm(request.POST, request.FILES)
-        images = request.FILES.getlist('image')
 
-        if post_form.is_valid() and image_form.is_valid():
-
-            post_tags = post_form.cleaned_data['tag']
+        if multiple_tags_form.is_valid() and image_form.is_valid():
             post = Post.objects.create(user=request.user)
-
-            for tag_name in post_tags:
-                tag = Tag.objects.filter(name=tag_name).first()
-
-                if not tag:
-                    tag = Tag.objects.create(name=tag_name)
-                post.tag.add(tag)
-
-            for image in images[:9]:
-                Images.objects.create(post=post, image=image)
-
-            # image_form.save()
-            # for image in images:
-            #     image.save()
-            #     Images.objects.create(post=post, image=image)
+            multiple_tags_form.save(post=post)
+            image_form.save(post=post)
 
             return redirect(reverse('dj_gram:feed'))
 
-    context = {'post_form': post_form, 'image_form': image_form}
+    context = {'multiple_tags_form': multiple_tags_form, 'image_form': image_form}
     return render(request, 'dj_gram/add_post.html', context)
 
 
@@ -62,14 +46,8 @@ class AddTag(FormView):
     form_class = TagForm
 
     def form_valid(self, form):
-        name = form.cleaned_data['name']
         post = Post.objects.get(pk=self.kwargs['post_id'])  # maybe it`s better to check if user is the author of post
-        tag = Tag.objects.filter(name=name).first()
-
-        if not tag:
-            tag = Tag.objects.create(name=name)
-
-        post.tag.add(tag)
+        form.save(post=post)
         return super(AddTag, self).form_valid(form)
 
     def get_success_url(self):

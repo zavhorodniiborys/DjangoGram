@@ -1,82 +1,63 @@
+import re
+
 from PIL import Image
 from django import forms
 from django.contrib.auth import password_validation
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm, PasswordChangeForm
 from django.core.exceptions import ValidationError
-from django.forms import ModelForm, ClearableFileInput, ImageField, PasswordInput, ModelMultipleChoiceField, CharField
+from django.forms import ModelForm, ClearableFileInput, ImageField, PasswordInput, ModelMultipleChoiceField, CharField, \
+    Textarea
 
 from .models import *
 
 
-class MultipleTagsForm(ModelForm):
-    tag = CharField(widget=forms.Textarea, max_length=32, required=False)
+class TagFormMixin:
+    def parse_name(self):
+        tags = self.cleaned_data['name'].lower()
+        tags = re.findall(r'#(\w{2,})\b', tags)
+        return tags
 
-    class Meta:
-        model = Post
-        fields = ['tag']
+    def save_multiple_tags(self, parsed_tags: list, post):
+        for _tag in parsed_tags:
+            self.save_one_tag(tag=_tag, post=post)
 
-    def clean_tag(self):
-        tags = self.cleaned_data.get('tag')
-        if not tags:
-            return tags
-
-        clear_tags = self.parse_tags(tags)
-        if clear_tags:
-            return clear_tags
-
-    def parse_tags(self, tags: str):
-        if '#' in tags:
-            clear_tags = set()
-            tags = tags.replace(',', '').replace('.', '').split()
-
-            for tag in tags:
-                if tag.startswith('#'):
-                    clear_tags.add(tag)
-
-            if clear_tags:
-                return clear_tags
-            self.add_error('tag', ValidationError('No tags were found. Tags must start with "#".'))
-
+    def save_one_tag(self, tag: str, post):
+        if Tag.objects.filter(name=tag).count():
+            tag = Tag.objects.get(name=tag)
         else:
-            self.add_error('tag', ValidationError('No tags were found. Tags must start with "#".'))
+            tag = Tag.objects.create(name=tag)
 
+        tag.posts.add(post)
 
-class MultipleTagsForm(ModelForm):
-    class Meta:
-        model = Tags
-        fields = ('name',)
-
-        widgets = {
-            'name': Textarea(attrs={'size': 10}),
-        }
-    
-    def clean_name(self):
-        tags = self.cleaned_data['name']
-
-    
     def save(self, post):
-        for _tag in self.clean_name(self):
-            if not Tag.objects.filter(name=_tag):
-                tag = Tag.objects.get(name=_tag)
-            else:
-                tag = Tag(name=_tag)
-            
-            tag.post.add(post)
-            tag.save()
+        if not post:
+            raise ValidationError('Please attach post to tags')
+
+        parsed_tags = self.parse_name()
+        if isinstance(parsed_tags, list):
+            self.save_multiple_tags(parsed_tags, post)
+        elif isinstance(parsed_tags, str):
+            self.save_one_tag(tag=parsed_tags, post=post)
 
 
+class MultipleTagsForm(TagFormMixin, ModelForm):
+    name = CharField(widget=Textarea(attrs={'rows': 10, 'cols': 20}), max_length=180, required=False)
 
-class TagForm(ModelForm):
     class Meta:
         model = Tag
         fields = ('name',)
 
-    def clean_name(self):
-        name = self.cleaned_data.get('name')
-        if not name.startswith('#') or len(name) == 1:
-            self.add_error('name', ValidationError('Tag must starts with "#" and contain characters.'))
 
-        return name.split()[0]
+class TagForm(TagFormMixin, ModelForm):
+    class Meta:
+        model = Tag
+        fields = ('name',)
+
+    def parse_name(self):
+        tags = self.cleaned_data['name'].lower()
+        tags = re.search(r'#(\w{2,})\b', tags)
+        tags = ''.join(tags.group())
+        return tags
 
     def clean(self):
         self._validate_unique = False
@@ -92,16 +73,18 @@ class ImageForm(ModelForm):
             'image': ClearableFileInput(attrs={'multiple': True}),
         }
 
+    def save(self, post=None):
+        if not post:
+            raise ValidationError('Please attach post to images')
+
+        for image in self.files.getlist('image'):
+            Images.objects.create(image=image, post=post)
+
 
 class CustomUserCreationForm(ModelForm):
     class Meta:
         model = CustomUser
         fields = ('email',)
-
-    # def __init__(self, *args, **kwargs):
-    #     super(UserCreationForm, self).__init__(*args, **kwargs)
-    #     del self.fields['password1']
-    #     del self.fields['password2']
 
 
 class CustomUserFillForm(ModelForm):
@@ -126,7 +109,7 @@ class CustomUserFillForm(ModelForm):
         password2 = self.cleaned_data.get('password2')
 
         if password1 and password2 and password1 != password2:
-            self.add_error('password1', ValidationError("Passwords don't match"))
+            self.add_error('password2', ValidationError("Passwords don't match"))
         return password1
     
     def save(self, commit=True):
