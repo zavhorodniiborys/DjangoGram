@@ -168,12 +168,12 @@ class TestMultipleTagsForm(TestCase):
     def setUpTestData(cls):
         user = CustomUser.objects.create_user(email='foo@foo.foo')
         Post.objects.create(user=user)
-
+    
+    #  testing Meta
     def test_model_is_Tag(self):
         model = MultipleTagsForm._meta.model
         self.assertEqual(model, Tag)
 
-    #  testing name
     def test_name_field(self):
         field = MultipleTagsForm().fields['name']
         widget = field.widget
@@ -185,28 +185,29 @@ class TestMultipleTagsForm(TestCase):
         self.assertEqual(max_length, 180)
         self.assertFalse(required)
 
-    # @patch('DjangoGramm/dj_gram/forms.py.MultipleTagsForm.save', MultipleTagsForm().parse_name())
     def test_parse_tag(self):
         bad_tag = '#Very-b^d_t@:@g'
         form = MultipleTagsForm(data={'name': bad_tag})
         form.is_valid()
-        res = form.parse_name()
+        res = form.parse_name(multiple=True)
 
         self.assertEqual(res, ['very'])
 
-    # def test_save_validation_error(self):
-    #     form = MultipleTagsForm(data={'name': '#tag'})
-    #     #form.save()
-    #     self.failureException(forms.ValidationError, form.save())
+    def test_save_validation_error(self):
+        form = MultipleTagsForm(data={'name': '#tag'})
+        form.save()
+        self.failureException(forms.ValidationError, form.save())
 
     def test_save(self):
         post = Post.objects.get(id=1)
-        form = MultipleTagsForm(data={'name': '#tag'})
+        form = MultipleTagsForm(data={'name': '#tag, #foo'})
         form.is_valid()
-        form.save(post=post)
-        new_tag = post.tag.get(name='tag').name
+        form.save(post=post, multiple=True)
+        first_tag = post.tag.get(name='tag').name
+        second_tag = post.tag.get(name='foo').name
 
-        self.assertEqual(new_tag, 'tag')
+        self.assertEqual(first_tag, 'tag')
+        self.assertEqual(second_tag, 'foo')
 
 
 class TestTagMixin(TestCase):
@@ -214,4 +215,74 @@ class TestTagMixin(TestCase):
 
 
 class TestTagForm(TestCase):
-    pass
+    #  testing Meta
+    def test_model_is_Tag(self):
+        model = TagForm._meta.model
+        self.assertEqual(model, Tag)
+    
+    def test_fields(self):
+        fields = TagForm._meta.fields
+        self.assertEqual(fields, ('name',))
+    
+    #  testing clean
+    def test_validate_unique(self):
+        is_validate_unique = TagForm._validate_unique 
+        self.assertFalse(is_validate_unique)
+    
+    def test_clean_returns_cleaned_data(self):
+        form = TagForm(data={'name': '#tag'})
+        cleaned_data = form.clean()
+        self.assertEqual(cleaned_data, 'tag')
+
+    def test_parse_name(self):
+        bad_tag = '#Very-b#^@d #tag'
+        form = TagForm(data={'name': bad_tag})
+        #  form.is_valid()
+        tag = form.parse_name()
+        self.assertEqual(tag, 'very')
+    
+    #  testing save
+    def test_save_validation_error(self):
+        form = TagForm(data={'name': '#tag'})
+        form.save()
+        self.failureException(forms.ValidationError, form.save())
+    
+    def test_save(self):
+        post = Post.objects.get(id=1)
+        form = TagForm(data={'name': '#tag'})
+        form.is_valid()
+        form.save(post=post)
+        new_tag = post.tag.get(name='tag').name
+
+        self.assertEqual(new_tag, 'tag')
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
