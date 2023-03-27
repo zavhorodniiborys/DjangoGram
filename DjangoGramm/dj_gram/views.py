@@ -32,7 +32,7 @@ def add_post(request):
 
         if multiple_tags_form.is_valid() and image_form.is_valid():
             post = Post.objects.create(user=request.user)
-            multiple_tags_form.save(post=post)
+            multiple_tags_form.save(post=post, multiple=True)
             image_form.save(post=post)
 
             return redirect(reverse('dj_gram:feed'))
@@ -47,7 +47,7 @@ class AddTag(FormView):
 
     def form_valid(self, form):
         post = Post.objects.get(pk=self.kwargs['post_id'])  # maybe it`s better to check if user is the author of post
-        form.save(post=post)
+        form.save(post=post, multiple=False)
         return super(AddTag, self).form_valid(form)
 
     def get_success_url(self):
@@ -123,18 +123,18 @@ def view_post(request, post_id):
     return render(request, 'dj_gram/view_post.html', {'post': post})
 
 
-def vote(request, post_id, vote):
+def vote(request, post_id, _vote):
     post = Post.objects.get(pk=post_id)
     try:
-        Vote.objects.create(profile=request.user, post=post, vote=vote)
+        Vote.objects.create(profile=request.user, post=post, vote=_vote)
     except IntegrityError:
         user_vote = Vote.objects.get(post=post, profile=request.user)
 
-        if user_vote.vote == vote:
+        if user_vote.vote == _vote:
             user_vote.delete()
         else:
             user_vote.delete()
-            Vote.objects.create(profile=request.user, post=post, vote=vote)
+            Vote.objects.create(profile=request.user, post=post, vote=_vote)
 
     return redirect(request.META.get('HTTP_REFERER'))
 

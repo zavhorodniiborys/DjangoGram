@@ -111,26 +111,18 @@ class TestCustomUserFillForm(TestCase):
         self.assertIsInstance(password1, forms.CharField)
         self.assertIsInstance(widget, PasswordInput)
 
-    # def test_clean_password2(self):
-    #     fields = ('first_name', 'last_name', 'bio')
-    #     values = ('John', 'Doe', 'About me')
-    #     data = dict(zip(fields, values))
-    #
-    #     password1 = 'VERY strong PASSWORD'
-    #     password2 = 'VERY strong P1ASSWORD'
-    #     data['password1'] = 'VERY strong PASSWORD'
-    #     data['password1'] = 'VERY strong PASSWORD'
-    #
-    #     form = CustomUserFillForm(data={'password1': password1, 'password2': password2})
-    #
-    #     self.assertTrue(True)
-    #     print(form.is_valid())
-    #     print(form.clean_password1(), form.clean_password2())
-    #     password1 = form.cleaned_data['password1']
-    #     password2 = form.cleaned_data['password2']
-    #     print('password1, password2', password1, password2)
-    #     self.assertEqual(password1, password2)
+    def test_clean_password2_returns_cleaned_password(self):
+        password = 'VERY strong PASSWORD'
+        fields = ('first_name', 'last_name', 'bio', 'password1', 'password2')
+        values = ('John', 'Doe', 'About me', password, password)
+        data = dict(zip(fields, values))
 
+        form = CustomUserFillForm(data=data, files={'avatar': create_test_image()})
+        form.is_valid()
+        cleaned_res = form.cleaned_data['password2']
+        self.assertEqual(cleaned_res, password)
+
+    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_password2_validation_is_present(self):
         password1 = 'VERY strong PASSWORD'
         password2 = 'mismatched_pass'
@@ -185,18 +177,19 @@ class TestMultipleTagsForm(TestCase):
         self.assertEqual(max_length, 180)
         self.assertFalse(required)
 
-    def test_parse_tag(self):
+    def test_parse_multiple_tags(self):
         bad_tag = '#Very-b^d_t@:@g'
         form = MultipleTagsForm(data={'name': bad_tag})
         form.is_valid()
-        res = form.parse_name(multiple=True)
+        res = form.parse_tags(multiple=True)
 
         self.assertEqual(res, ['very'])
 
     def test_save_validation_error(self):
+        post = Post.objects.get(id=1)
         form = MultipleTagsForm(data={'name': '#tag'})
-        form.save()
-        self.failureException(forms.ValidationError, form.save())
+        form.is_valid()
+        self.failureException(forms.ValidationError, form.save(post=post, multiple=True))
 
     def test_save(self):
         post = Post.objects.get(id=1)
@@ -210,11 +203,12 @@ class TestMultipleTagsForm(TestCase):
         self.assertEqual(second_tag, 'foo')
 
 
-class TestTagMixin(TestCase):
-    pass
-
-
 class TestTagForm(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        user = CustomUser.objects.create_user(email='foo@foo.foo')
+        Post.objects.create(user=user)
+
     #  testing Meta
     def test_model_is_Tag(self):
         model = TagForm._meta.model
@@ -226,63 +220,33 @@ class TestTagForm(TestCase):
     
     #  testing clean
     def test_validate_unique(self):
-        is_validate_unique = TagForm._validate_unique 
+        is_validate_unique = TagForm()._validate_unique
         self.assertFalse(is_validate_unique)
     
     def test_clean_returns_cleaned_data(self):
         form = TagForm(data={'name': '#tag'})
+        form.is_valid()
         cleaned_data = form.clean()
-        self.assertEqual(cleaned_data, 'tag')
+        self.assertEqual(cleaned_data, {'name': '#tag'})
 
     def test_parse_name(self):
         bad_tag = '#Very-b#^@d #tag'
         form = TagForm(data={'name': bad_tag})
-        #  form.is_valid()
-        tag = form.parse_name()
+        form.is_valid()
+        tag = form.parse_tags(multiple=False)
         self.assertEqual(tag, 'very')
     
     #  testing save
     def test_save_validation_error(self):
         form = TagForm(data={'name': '#tag'})
-        form.save()
-        self.failureException(forms.ValidationError, form.save())
+        with self.assertRaises(ValidationError):
+            form.save(post=CustomUser, multiple=False)
     
     def test_save(self):
         post = Post.objects.get(id=1)
         form = TagForm(data={'name': '#tag'})
         form.is_valid()
-        form.save(post=post)
+        form.save(post=post, multiple=False)
         new_tag = post.tag.get(name='tag').name
 
         self.assertEqual(new_tag, 'tag')
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

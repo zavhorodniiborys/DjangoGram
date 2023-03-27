@@ -12,15 +12,19 @@ from .models import *
 
 
 class TagFormMixin:
-    def parse_tags(self, multiple):
-        tags = self.cleaned_data['name'].lower()
+    """
+    Mixin for parsing and saving tags.
+    Use multiple = True to parse and save more than one tag in string.
+    Tags must start with '#'.
+    """
+    def parse_tags(self, multiple: bool):
+        tags = self.cleaned_data.get('name').lower()
 
         if multiple:
             tags = re.findall(r'#(\w{2,})\b', tags)
         else:
             tags = re.search(r'#(\w{2,})\b', tags)
-            tags = ''.join(tags.group())
-
+            tags = ''.join(tags.group(1))  # group(1) because re.search includes "#"
         return tags
 
     def save_one_tag(self, tag: str, post):
@@ -31,26 +35,20 @@ class TagFormMixin:
 
         tag.posts.add(post)
 
-    def save_multiple_tags(self, parsed_tags: list, post):
-        for _tag in parsed_tags:
+    def save_multiple_tags(self, tags: list, post):
+        for _tag in tags:
             self.save_one_tag(tag=_tag, post=post)
 
-    def save(self, post, multiple):
-        if not post:
+    def save(self, post, multiple: bool):
+        if not isinstance(post, Post):
             raise ValidationError('Please attach post to tags')
-        
+
+        parsed_tags = self.parse_tags(multiple)
+
         if multiple:
-            self.save_multiple_tags(parsed_tags, post)
+            self.save_multiple_tags(tags=parsed_tags, post=post)
         else:
             self.save_one_tag(tag=parsed_tags, post=post)
-
-        #parsed_tags = self.parse_name()
-
-        #if isinstance(parsed_tags, list):
-        #    self.save_multiple_tags(parsed_tags, post)
-
-        #elif isinstance(parsed_tags, str):
-        #    self.save_one_tag(tag=parsed_tags, post=post)
 
 
 class MultipleTagsForm(TagFormMixin, ModelForm):
@@ -65,12 +63,6 @@ class TagForm(TagFormMixin, ModelForm):
     class Meta:
         model = Tag
         fields = ('name',)
-
-    #def parse_name(self):
-    #    tags = self.cleaned_data['name'].lower()
-    #    tags = re.search(r'#(\w{2,})\b', tags)
-    #    tags = ''.join(tags.group())
-    #    return tags
 
     def clean(self):
         self._validate_unique = False
