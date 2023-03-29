@@ -196,8 +196,8 @@ class TestMultipleTagsForm(TestCase):
         form = MultipleTagsForm(data={'name': '#tag, #foo'})
         form.is_valid()
         form.save(post=post, multiple=True)
-        first_tag = post.tag.get(name='tag').name
-        second_tag = post.tag.get(name='foo').name
+        first_tag = post.tags.get(name='tag').name
+        second_tag = post.tags.get(name='foo').name
 
         self.assertEqual(first_tag, 'tag')
         self.assertEqual(second_tag, 'foo')
@@ -247,6 +247,6 @@ class TestTagForm(TestCase):
         form = TagForm(data={'name': '#tag'})
         form.is_valid()
         form.save(post=post, multiple=False)
-        new_tag = post.tag.get(name='tag').name
+        new_tag = post.tags.get(name='tag').name
 
         self.assertEqual(new_tag, 'tag')

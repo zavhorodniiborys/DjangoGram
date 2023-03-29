@@ -5,14 +5,19 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 
 
+
 def login_user(request):
     if request.POST:
         username = request.POST['username']
         password = request.POST['password']
         user = authenticate(request, username=username, password=password)
+        print(user)
+        print(password, username)
+        print('user', user)
 
         if user is not None:
             login(request, user)
+            print('HERE')
             # message
             return redirect(request.GET.get('next', 'dj_gram:feed'))
 

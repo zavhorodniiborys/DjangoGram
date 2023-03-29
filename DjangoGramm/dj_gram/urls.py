@@ -7,7 +7,7 @@ from . import views
 app_name = 'dj_gram'
 
 urlpatterns = [
-    path('', views.index),
+    path('', views.index, name='index'),
     path('registration/', views.registration),
     path('add_post/', views.add_post, name='add_post'),
     path('feed/', views.Feed.as_view(), name='feed'),

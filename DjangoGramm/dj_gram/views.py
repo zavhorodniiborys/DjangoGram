@@ -1,6 +1,7 @@
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError
 from django.urls import reverse_lazy, reverse
 from django.utils.encoding import force_bytes, force_str
@@ -41,12 +42,12 @@ def add_post(request):
     return render(request, 'dj_gram/add_post.html', context)
 
 
-class AddTag(FormView):
+class AddTag(LoginRequiredMixin, FormView):
     template_name = 'dj_gram/add_tag.html'
     form_class = TagForm
 
     def form_valid(self, form):
-        post = Post.objects.get(pk=self.kwargs['post_id'])  # maybe it`s better to check if user is the author of post
+        post = Post.objects.get(pk=self.kwargs['post_id'])  # maybe I should check if user is author of the post
         form.save(post=post, multiple=False)
         return super(AddTag, self).form_valid(form)
 
@@ -109,7 +110,7 @@ def fill_profile(request, uidb64, umailb64, token):
         return HttpResponse('Wrong verification key')
 
 
-class Feed(ListView):
+class Feed(LoginRequiredMixin, ListView):
     model = Post
     context_object_name = 'posts'
     template_name = 'dj_gram/feed.html'
@@ -123,6 +124,7 @@ def view_post(request, post_id):
     return render(request, 'dj_gram/view_post.html', {'post': post})
 
 
+@login_required
 def vote(request, post_id, _vote):
     post = Post.objects.get(pk=post_id)
     try:
@@ -130,7 +132,7 @@ def vote(request, post_id, _vote):
     except IntegrityError:
         user_vote = Vote.objects.get(post=post, profile=request.user)
 
-        if user_vote.vote == _vote:
+        if user_vote.vote == vote:
             user_vote.delete()
         else:
             user_vote.delete()
@@ -139,6 +141,7 @@ def vote(request, post_id, _vote):
     return redirect(request.META.get('HTTP_REFERER'))
 
 
+@login_required
 def create_registration_link(request, user):
     domain = get_current_site(request).domain
     uid = urlsafe_base64_encode(force_bytes(user.pk))

@@ -246,7 +246,7 @@ class TestPost(TestCase):
         post = Post.objects.create(user=user)
 
         #  creating tag for testing m2m
-        post.tag.add(Tag.objects.create(name='test_tag'))
+        post.tags.add(Tag.objects.create(name='test_tag'))
 
         #  creating votes for testing get_likes/dislikes functional
         Vote.objects.create(profile=user, post=post, vote=True)
@@ -287,21 +287,21 @@ class TestPost(TestCase):
 
     #  testing tag
     def test_post_tag_m2m(self):
-        tag_field = Post._meta.get_field('tag')
+        tag_field = Post._meta.get_field('tags')
         self.assertIsInstance(tag_field, models.ManyToManyField)
 
     def test_post_tag_m2m_is_Tag(self):
         post = Post.objects.get(id=1)
-        tag = post.tag.first()
+        tag = post.tags.first()
         self.assertIsInstance(tag, Tag)
 
     def test_post_tag_blank(self):
-        is_blank = Post._meta.get_field('tag').blank
+        is_blank = Post._meta.get_field('tags').blank
         self.assertTrue(is_blank)
 
     def test_post_tag_related_name(self):
         post = Post.objects.get(id=1)
-        tag = post.tag.first()
+        tag = post.tags.first()
         post = tag.posts.first()
 
         self.assertIsInstance(post, Post)

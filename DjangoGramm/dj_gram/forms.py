@@ -1,6 +1,5 @@
 import re
 
-from PIL import Image
 from django import forms
 from django.contrib.auth import password_validation
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm, PasswordChangeForm
@@ -24,6 +23,8 @@ class TagFormMixin:
             tags = re.findall(r'#(\w{2,})\b', tags)
         else:
             tags = re.search(r'#(\w{2,})\b', tags)
+            if not tags:
+                raise ValidationError('Wrong tag format. Tag must start with "#".')
             tags = ''.join(tags.group(1))  # group(1) because re.search includes "#"
         return tags
 

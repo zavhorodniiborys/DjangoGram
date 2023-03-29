@@ -62,7 +62,7 @@ class CustomUser(AbstractUser):
 class Post(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='posts')
     date = models.DateTimeField(auto_now_add=True)
-    tag = models.ManyToManyField(to='Tag', related_name='posts', blank=True)
+    tags = models.ManyToManyField(to='Tag', related_name='posts', blank=True)
 
     def get_likes(self):
         return self.votes.filter(vote=1).count()
