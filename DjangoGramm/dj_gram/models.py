@@ -70,9 +70,6 @@ class Post(models.Model):
     def get_dislikes(self):
         return self.votes.filter(vote=0).count()
 
-    def __str__(self):
-        return str(self.id)
-
     class Meta:
         ordering = ['-id']
 

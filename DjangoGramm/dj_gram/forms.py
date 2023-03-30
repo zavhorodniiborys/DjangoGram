@@ -25,6 +25,7 @@ class TagFormMixin:
             tags = re.search(r'#(\w{2,})\b', tags)
             if not tags:
                 raise ValidationError('Wrong tag format. Tag must start with "#".')
+
             tags = ''.join(tags.group(1))  # group(1) because re.search includes "#"
         return tags
 
@@ -45,6 +46,8 @@ class TagFormMixin:
             raise ValidationError('Please attach post to tags')
 
         parsed_tags = self.parse_tags(multiple)
+        if not parsed_tags:
+            return
 
         if multiple:
             self.save_multiple_tags(tags=parsed_tags, post=post)
@@ -58,6 +61,10 @@ class MultipleTagsForm(TagFormMixin, ModelForm):
     class Meta:
         model = Tag
         fields = ('name',)
+
+    def clean(self):
+        self._validate_unique = False
+        return self.cleaned_data
 
 
 class TagForm(TagFormMixin, ModelForm):

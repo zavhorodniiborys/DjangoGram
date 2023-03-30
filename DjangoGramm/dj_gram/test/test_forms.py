@@ -27,8 +27,8 @@ class TestImageForm(TestCase):
     @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_valid_form(self):
         image = create_test_image()
-        data = {'image': image.open()}
-        form = ImageForm(data=None, files=data)
+        files = {'image': image.open()}
+        form = ImageForm(data=None, files=files)
 
         self.assertTrue(form.is_valid())
 

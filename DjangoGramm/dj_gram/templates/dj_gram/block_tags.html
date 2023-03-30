@@ -1,6 +1,6 @@
 {% block tags %}
-{% if post.tag %}
-    {% for tag in post.tag.all %}
+{% if post.tags %}
+    {% for tag in post.tags.all %}
         {{tag.name}} </br>
     {% endfor %}
 {% endif %}

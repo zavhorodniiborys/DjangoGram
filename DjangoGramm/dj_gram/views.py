@@ -141,7 +141,6 @@ def vote(request, post_id, _vote):
     return redirect(request.META.get('HTTP_REFERER'))
 
 
-@login_required
 def create_registration_link(request, user):
     domain = get_current_site(request).domain
     uid = urlsafe_base64_encode(force_bytes(user.pk))
