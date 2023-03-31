@@ -10,7 +10,7 @@ from .conf import create_test_image, TEST_DIR
 from ..views import AddTag
 
 
-class TestIndex(TestCase):
+class Test_view_post(TestCase):
     @classmethod
     @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def setUpTestData(cls):
@@ -161,5 +161,49 @@ class Test_add_post(TestCase):
         self.assertEqual(post.tags.count(), 2)
         self.assertEqual(image.post, post)
 
-    def test_authenticated_user_POST_fail(self):
-        pass
+
+class TestFeed(TestCase):
+    def test_anonymous_user(self):
+        response = self.client.get(reverse('dj_gram:feed'))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('authentication:login_user') + '?next=/feed/')
+
+    def test_model_is_Post(self):
+        model = Feed.model
+        self.assertEqual(model, Post)
+    
+    def test_context_object_name(self):
+        context_object_name = Feed.context_object_name 
+        self.assertEqual(context_object_name, 'posts')
+    
+    def test_template_name(self):
+        template_name = Feed.template_name
+        self.assertEqual(template_name, 'dj_gram/feed.html')
+
+    def test_pagination(self):
+        paginate_by = Feed.paginate_by 
+        self.assertEqual(paginate_by, 2)
+    
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
