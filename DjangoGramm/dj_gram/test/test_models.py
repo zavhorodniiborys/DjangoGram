@@ -188,23 +188,23 @@ class TestVote(TestCase):
     def setUpTestData(cls):
         user = CustomUser.objects.create_user(email='test@test.test')
         post = Post.objects.create(user=user)
-        Vote.objects.create(profile=user, post=post, vote=True)
+        Vote.objects.create(user=user, post=post, vote=True)
 
-    #  testing profile
-    def test_vote_profile_foreign_key(self):
-        profile_field = Vote._meta.get_field('profile')
-        self.assertIsInstance(profile_field, models.ForeignKey)
+    #  testing user
+    def test_vote_user_foreign_key(self):
+        user_field = Vote._meta.get_field('user')
+        self.assertIsInstance(user_field, models.ForeignKey)
 
-    def test_vote_profile_is_CustomUser(self):
+    def test_vote_user_is_CustomUser(self):
         vote = Vote.objects.get(pk=1)
-        profile = vote.profile
-        self.assertIsInstance(profile, CustomUser)
+        user = vote.user
+        self.assertIsInstance(user, CustomUser)
 
-    def test_vote_profile_on_delete_cascade(self):
-        on_delete = Vote._meta.get_field('profile').remote_field.on_delete
+    def test_vote_user_on_delete_cascade(self):
+        on_delete = Vote._meta.get_field('user').remote_field.on_delete
         self.assertEqual(on_delete, models.CASCADE)
 
-    def test_vote_profile_related_name(self):
+    def test_vote_user_related_name(self):
         user = CustomUser.objects.get(id=1)
         related_name = user.votes.get(id=1)
         self.assertIsInstance(related_name, Vote)
@@ -236,7 +236,7 @@ class TestVote(TestCase):
     #  testing Meta
     def test_vote_meta_unique_together_(self):
         unique_together = Vote._meta.unique_together[0]
-        self.assertEqual(unique_together, ('profile_id', 'post_id'))
+        self.assertEqual(unique_together, ('user', 'post'))
 
 
 class TestPost(TestCase):
@@ -249,10 +249,10 @@ class TestPost(TestCase):
         post.tags.add(Tag.objects.create(name='test_tag'))
 
         #  creating votes for testing get_likes/dislikes functional
-        Vote.objects.create(profile=user, post=post, vote=True)
-        Vote.objects.create(profile=CustomUser.objects.create_user(email='foo@foo.foo'),
+        Vote.objects.create(user=user, post=post, vote=True)
+        Vote.objects.create(user=CustomUser.objects.create_user(email='foo@foo.foo'),
                             post=post, vote=True)
-        Vote.objects.create(profile=CustomUser.objects.create_user(email='bar@bar.bar'),
+        Vote.objects.create(user=CustomUser.objects.create_user(email='bar@bar.bar'),
                             post=post, vote=False)
 
     #  testing Meta

@@ -1,25 +1,24 @@
+from django.conf.global_settings import EMAIL_HOST_USER
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError
+from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.utils.encoding import force_bytes, force_str
+from django.utils.html import strip_tags
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.views.generic import ListView
+from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, FormView
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.core.mail import send_mail
 from django.contrib.sites.shortcuts import get_current_site
 
 from .models import *
 from .forms import *
 from .tokens import account_activation_token
-
-
-def index(request):
-    return HttpResponse('Home page')
 
 
 @login_required
@@ -52,62 +51,114 @@ class AddTag(LoginRequiredMixin, FormView):
         return super(AddTag, self).form_valid(form)
 
     def get_success_url(self):
-        return reverse('dj_gram:view_post', kwargs={'post_id': self.kwargs['post_id']})
+        return reverse('dj_gram:view_post', kwargs={'pk': self.kwargs['post_id']})
 
 
-def registration(request):
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)  # maybe it`s better don`t attach form to model todo
-        if form.is_valid():
-            user = form.save(commit=False)
-            user.is_active = False
-            user.save()
+class Registration(FormView):
+    template_name = 'dj_gram/register.html'
+    form_class = CustomUserCreationForm
 
-            domain, u_id, u_email, token = create_registration_link(request, user)
+    @staticmethod
+    def _create_registration_link(request, user):
+        domain = get_current_site(request).domain
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        email = urlsafe_base64_encode(force_bytes(user.email))
+        token = account_activation_token.make_token(user=user)
 
-            # send_mail(
-            #     'Email confirmation',  # subject
-            #     'Your unique link',  # message
-            #     'zavgorodnijboris188@gmail.com',  # from email
-            #     [user.email],  # to email
-            # )
+        link = f'http://{domain}/confirm_email/{uid}/{email}/{token}'
+        return link
 
-            context = {
-                'domain': domain,
-                'uidb64': u_id,
-                'umailb64': u_email,
-                'token': token
-            }
+    def _create_registration_message(self, request, user):
+        registration_link = self._create_registration_link(request, user)
+        context = {'registration_link': registration_link}
 
-            return render(request, 'dj_gram/activate_email.html', context)
+        return strip_tags(render_to_string('dj_gram/activate_email.html', context))
 
-    else:
-        form = CustomUserCreationForm()
+    def form_valid(self, form):
+        user = form.save()
 
-    return render(request, 'dj_gram/register.html', {'form': form})
+        message = self._create_registration_message(self.request, user)
+        send_mail(
+            'Email confirmation',  # subject
+            message,  # message
+            EMAIL_HOST_USER,  # from email
+            [user.email],  # to email
+        )
+
+        # self.context = {
+        #     'domain': domain,
+        #     'uidb64': u_id,
+        #     'umailb64': u_email,
+        #     'token': token
+        # }
+        # return render(self.request, 'dj_gram/activate_email.html', self.context)
+        return super(Registration, self).form_valid(form)
+
+    def get_success_url(self):
+        # return reverse('dj_gram:feed')
+        # message
+        return reverse('dj_gram:registration')
 
 
-def fill_profile(request, uidb64, umailb64, token):
-    if verify_token(uidb64, umailb64, token):
-        if request.method == 'POST':
-            user_pk = force_str(urlsafe_base64_decode(uidb64))
-            user = get_object_or_404(CustomUser, pk=user_pk)
+# def registration(request):
+#     if request.method == 'POST':
+#         form = CustomUserCreationForm(request.POST)  # maybe it`s better don`t attach form to model todo
+#         if form.is_valid():
+#             user = form.save(commit=False)
+#             user.is_active = False
+#             user.save()
+#
+#             domain, u_id, u_email, token = create_registration_link(request, user)
+#
+#             # send_mail(
+#             #     'Email confirmation',  # subject
+#             #     'Your unique link',  # message
+#             #     'zavgorodnijboris188@gmail.com',  # from email
+#             #     [user.email],  # to email
+#             # )
+#
+#             context = {
+#                 'domain': domain,
+#                 'uidb64': u_id,
+#                 'umailb64': u_email,
+#                 'token': token
+#             }
+#
+#             return render(request, 'dj_gram/activate_email.html', context)
+#
+#     else:
+#         form = CustomUserCreationForm()
+#
+#     return render(request, 'dj_gram/register.html', {'form': form})
 
-            form = CustomUserFillForm(request.POST, request.FILES, instance=user)
-            if form.is_valid():
-                user = form.save(commit=False)
-                user.is_active = True
-                user.save()
 
-                return redirect(reverse('authentication:login_user'))
+class FillProfile(FormView):
+    template_name = 'dj_gram/create_profile.html'
+    form_class = CustomUserFillForm
+
+    def dispatch(self, request, *args, **kwargs):
+        uidb64 = self.kwargs['uidb64']
+        umailb64 = self.kwargs['umailb64']
+        token = self.kwargs['token']
+
+        if account_activation_token.verify_token(uidb64, umailb64, token):
+            return FormView.dispatch(self, request, *args, **kwargs)
         else:
-            form = CustomUserFillForm(request.POST)
+            raise Http404
 
-        context = {'form': form}
-        return render(request, 'dj_gram/create_profile.html', context)
+    def get_form(self, form_class=form_class):
+        user_pk = force_str(urlsafe_base64_decode(self.kwargs['uidb64']))
+        user = get_object_or_404(CustomUser, pk=user_pk)
+        return form_class(instance=user, **self.get_form_kwargs())
 
-    else:
-        return HttpResponse('Wrong verification key')
+    def form_valid(self, form):
+        user = form.save(commit=False)
+        user.is_active = True
+        user.save()
+        return super(FillProfile, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('authentication:login_user')
 
 
 class Feed(LoginRequiredMixin, ListView):
@@ -115,52 +166,30 @@ class Feed(LoginRequiredMixin, ListView):
     context_object_name = 'posts'
     template_name = 'dj_gram/feed.html'
 
-    paginate_by = 2
+    paginate_by = 3
+
+
+class ViewPost(LoginRequiredMixin, DetailView):
+    model = Post
+    context_object_name = 'post'
+    template_name = 'dj_gram/view_post.html'
 
 
 @login_required
-def view_post(request, post_id):
+def vote(request, post_id, vote):
+    vote = bool(vote)
     post = Post.objects.get(pk=post_id)
-    return render(request, 'dj_gram/view_post.html', {'post': post})
 
+    user_vote = Vote.objects.filter(post=post, user=request.user).first()
 
-@login_required
-def vote(request, post_id, _vote):
-    post = Post.objects.get(pk=post_id)
-    try:
-        Vote.objects.create(profile=request.user, post=post, vote=_vote)
-    except IntegrityError:
-        user_vote = Vote.objects.get(post=post, profile=request.user)
-
-        if user_vote.vote == vote:
-            user_vote.delete()
-        else:
-            user_vote.delete()
-            Vote.objects.create(profile=request.user, post=post, vote=_vote)
-
-    return redirect(request.META.get('HTTP_REFERER'))
-
-
-def create_registration_link(request, user):
-    domain = get_current_site(request).domain
-    uid = urlsafe_base64_encode(force_bytes(user.pk))
-    email = urlsafe_base64_encode(force_bytes(user.email))
-    token = account_activation_token.make_token(user=user, )
-
-    return domain, uid, email, token
-
-
-def verify_token(uidb64, umailb64, token):
-    try:
-        uid = force_str(urlsafe_base64_decode(uidb64))
-        email = force_str(urlsafe_base64_decode(umailb64))
-        user = CustomUser.objects.get(pk=uid, email=email)
-
-    except(TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
-        user = None
-
-    if user is not None and account_activation_token.check_token(user, token):
-        return True
+    if not user_vote:
+        Vote.objects.create(user=request.user, post=post, vote=vote)
 
     else:
-        return False
+        if user_vote.vote == vote:
+            user_vote.delete()  # maybe it will be better to mark vote as "inactive" and not delete it
+        else:
+            user_vote.vote = vote
+            user_vote.save()
+
+    return redirect(request.META.get('HTTP_REFERER'))

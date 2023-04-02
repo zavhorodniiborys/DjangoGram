@@ -75,12 +75,12 @@ class Post(models.Model):
 
 
 class Vote(models.Model):
-    profile = models.ForeignKey(CustomUser, related_name='votes', on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser, related_name='votes', on_delete=models.CASCADE)
     post = models.ForeignKey(Post, related_name='votes', on_delete=models.CASCADE)
     vote = models.BooleanField()
 
     class Meta:
-        unique_together = ('profile_id', 'post_id')
+        unique_together = ('user', 'post')
 
 
 class Images(models.Model):

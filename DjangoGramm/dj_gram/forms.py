@@ -99,6 +99,13 @@ class CustomUserCreationForm(ModelForm):
         model = CustomUser
         fields = ('email',)
 
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.is_active = False
+        if commit:
+            user.save()
+        return user
+
 
 class CustomUserFillForm(ModelForm):
     password1 = forms.CharField(widget=PasswordInput())
