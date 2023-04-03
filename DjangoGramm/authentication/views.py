@@ -3,24 +3,16 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.views.generic import FormView
 
 
-def login_user(request):
-    if request.POST:
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
+class LoginUser(FormView):
+    form_class = AuthenticationForm
+    template_name = 'authentication/login.html'
 
-        if user is not None:
-            login(request, user)
-            # message
-            return redirect(request.GET.get('next', 'dj_gram:feed'))
-
-        else:
-            # Return an 'invalid login' error message.
-            return HttpResponse('Wrong email/password')
-    else:
-        return render(request, 'authentication/login.html', {'form': AuthenticationForm})
+    def form_valid(self, form):
+        login(self.request, form.get_user())
+        return redirect(self.request.GET.get('next', 'dj_gram:feed'))
 
 
 def logout_user(request):

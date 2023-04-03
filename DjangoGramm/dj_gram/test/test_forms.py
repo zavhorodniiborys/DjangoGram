@@ -160,7 +160,7 @@ class TestMultipleTagsForm(TestCase):
     def setUpTestData(cls):
         user = CustomUser.objects.create_user(email='foo@foo.foo')
         Post.objects.create(user=user)
-    
+
     #  testing Meta
     def test_model_is_Tag(self):
         model = MultipleTagsForm._meta.model
@@ -213,16 +213,28 @@ class TestTagForm(TestCase):
     def test_model_is_Tag(self):
         model = TagForm._meta.model
         self.assertEqual(model, Tag)
-    
+
     def test_fields(self):
         fields = TagForm._meta.fields
         self.assertEqual(fields, ('name',))
-    
+
     #  testing clean
     def test_validate_unique(self):
         is_validate_unique = TagForm()._validate_unique
         self.assertFalse(is_validate_unique)
-    
+
+    def test_tag_already_exists(self):
+        tag = Tag.objects.create(name='#tag')
+        post = Post.objects.get(id=1)
+        tag.posts.add(post)
+
+        form = TagForm(data={'name': '#tag'})
+        form.is_valid()
+        form.save(post=post, multiple=False)
+        new_tag = Tag.objects.get(id=1)
+
+        self.assertEqual(new_tag, tag)
+
     def test_clean_returns_cleaned_data(self):
         form = TagForm(data={'name': '#tag'})
         form.is_valid()
@@ -235,13 +247,13 @@ class TestTagForm(TestCase):
         form.is_valid()
         tag = form.parse_tags(multiple=False)
         self.assertEqual(tag, 'very')
-    
+
     #  testing save
     def test_save_validation_error(self):
         form = TagForm(data={'name': '#tag'})
         with self.assertRaises(ValidationError):
             form.save(post=CustomUser, multiple=False)
-    
+
     def test_save(self):
         post = Post.objects.get(id=1)
         form = TagForm(data={'name': '#tag'})

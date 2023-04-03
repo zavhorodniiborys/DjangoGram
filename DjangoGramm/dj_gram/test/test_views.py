@@ -341,6 +341,20 @@ class TestFillProfile(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_get_form(self):
+        user = CustomUser.objects.create_user(email='foo@foo.foo')
+        data = {
+            'uidb64': urlsafe_base64_encode(force_bytes(user.pk)),
+            'umailb64': urlsafe_base64_encode(force_bytes(user.email)),
+            'token': account_activation_token.make_token(user=user)
+        }
+        fill_profile = FillProfile()
+        # fill_profile.request = self.client.get(reverse('dj_gram:fill_profile', kwargs=data))
+        fill_profile.setup(request=None, uidb64=urlsafe_base64_encode(force_bytes(user.pk)))
+        # fill_profile.kwargs['uidb64'] = urlsafe_base64_encode(force_bytes(user.pk))
+        # response = self.client.get(reverse('dj_gram:fill_profile', kwargs=data))
+        print(fill_profile.get_form())
+
     def test_form_valid(self):
         user = CustomUser.objects.create_user(email='foo@foo.foo', is_active=False)
         kwargs = {
