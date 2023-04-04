@@ -32,7 +32,7 @@ def add_post(request):
 
         if multiple_tags_form.is_valid() and image_form.is_valid():
             post = Post.objects.create(user=request.user)
-            multiple_tags_form.save(post=post, multiple=True)
+            multiple_tags_form.save(post=post)
             image_form.save(post=post)
 
             return redirect(reverse('dj_gram:feed'))
@@ -47,7 +47,7 @@ class AddTag(LoginRequiredMixin, FormView):
 
     def form_valid(self, form):
         post = Post.objects.get(pk=self.kwargs['post_id'])  # maybe I should check if user is author of the post
-        form.save(post=post, multiple=False)
+        form.save(post=post)
         return super(AddTag, self).form_valid(form)
 
     def get_success_url(self):
@@ -95,41 +95,8 @@ class Registration(FormView):
         return super(Registration, self).form_valid(form)
 
     def get_success_url(self):
-        # return reverse('dj_gram:feed')
         # message
         return reverse('dj_gram:registration')
-
-
-# def registration(request):
-#     if request.method == 'POST':
-#         form = CustomUserCreationForm(request.POST)  # maybe it`s better don`t attach form to model todo
-#         if form.is_valid():
-#             user = form.save(commit=False)
-#             user.is_active = False
-#             user.save()
-#
-#             domain, u_id, u_email, token = create_registration_link(request, user)
-#
-#             # send_mail(
-#             #     'Email confirmation',  # subject
-#             #     'Your unique link',  # message
-#             #     'zavgorodnijboris188@gmail.com',  # from email
-#             #     [user.email],  # to email
-#             # )
-#
-#             context = {
-#                 'domain': domain,
-#                 'uidb64': u_id,
-#                 'umailb64': u_email,
-#                 'token': token
-#             }
-#
-#             return render(request, 'dj_gram/activate_email.html', context)
-#
-#     else:
-#         form = CustomUserCreationForm()
-#
-#     return render(request, 'dj_gram/register.html', {'form': form})
 
 
 class FillProfile(FormView):

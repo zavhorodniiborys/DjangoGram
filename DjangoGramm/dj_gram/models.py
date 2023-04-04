@@ -72,6 +72,16 @@ class Post(models.Model):
 
     class Meta:
         ordering = ['-id']
+    
+    def validate_count_tags_in_post(self, max_count=5):
+        tags_count = self.tags.all().count()
+        if tags_count >= max_count:
+            raise ValidationError(f'Post can\'t have more than {max_count} tags')
+
+    def save(self, *args, **kwargs):
+        self.validate_count_tags_in_post()
+        super(Post, self).save(*args, **kwargs)
+
 
 
 class Vote(models.Model):
@@ -99,9 +109,7 @@ class Images(models.Model):
       #  if images_count >= max_count:
        #     raise ValidationError(f'Post can\'t have more than {max_count} images')
     
-    def save(self, *args, **kwargs):
-        #self.validate_count_images_in_post()
-
+    def make_thumbnail(self):
         acceptable_image_size = (1280, 720)
         image = Image.open(self.image).convert('RGB')
         image_name = self.image.name
@@ -113,6 +121,11 @@ class Images(models.Model):
         temp.seek(0)  # sets the file's start position
 
         self.image.save(image_name, ContentFile(temp.read()), save=False)  # ContentFile reads file as string of bytes
+    
+    def save(self, *args, **kwargs):
+        #self.validate_count_images_in_post()
+        self.make_thumbnail()
+
         super(Images, self).save(*args, **kwargs)
 
 

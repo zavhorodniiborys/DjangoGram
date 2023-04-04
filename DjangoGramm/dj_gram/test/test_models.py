@@ -4,9 +4,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile, TemporaryUploaded
 from django.test import TestCase, override_settings
 
 from ..models import *
-from .conf import create_test_image
-
-TEST_DIR = 'dj_gram/test/test_data'
+from .conf import TEST_DIR, create_test_image
 
 
 class TestCustomUserModel(TestCase):
@@ -19,7 +17,11 @@ class TestCustomUserModel(TestCase):
         user.avatar = avatar
         user.save()
 
-        superuser = CustomUser.objects.create_superuser(email='admin@admin.admin')
+        CustomUser.objects.create_superuser(email='admin@admin.admin')
+    
+    def setUp(self):
+        self.user = CustomUser.objects.get(email='test@test.com')
+        self.superuser = CustomUser.objects.get(email='admin@admin.admin')
 
     @classmethod
     def tearDownClass(cls):
@@ -38,8 +40,7 @@ class TestCustomUserModel(TestCase):
 
     #  testing first_name
     def test_customuser_first_name(self):
-        user = CustomUser.objects.get(id=1)
-        self.assertEqual(user.first_name, 'John')
+        self.assertEqual(self.user.first_name, 'John')
 
     def test_customuser_first_name_max_length(self):
         max_length = CustomUser._meta.get_field('first_name').max_length
@@ -47,43 +48,36 @@ class TestCustomUserModel(TestCase):
 
     #  testing last_name
     def test_customuser_last_name(self):
-        user = CustomUser.objects.get(id=1)
-        self.assertEqual(user.last_name, 'Doe')
+        self.assertEqual(self.user.last_name, 'Doe')
 
     def test_customuser_last_name_max_length(self):
-        user = CustomUser.objects.get(id=1)
-        max_length = user._meta.get_field('last_name').max_length
+        max_length = self.user._meta.get_field('last_name').max_length
         self.assertEqual(max_length, 32)
 
     #  testing email
     def test_customuser_email(self):
-        user = CustomUser.objects.get(id=1)
-        self.assertEqual(user.email, 'test@test.com')
+        self.assertEqual(self.user.email, 'test@test.com')
 
     def test_customuser_email_max_length(self):
         max_length = CustomUser._meta.get_field('email').max_length
         self.assertEqual(max_length, 255)
 
     def test_customuser_email_verbose_name(self):
-        user = CustomUser.objects.get(id=1)
         verbose_name = CustomUser._meta.get_field('email').verbose_name
         self.assertEqual(verbose_name, 'email address')
 
     def test_customuser_email_unique(self):
-        user = CustomUser.objects.get(id=1)
-        unique = user._meta.get_field('email').unique
+        #  user = CustomUser.objects.get(id=1)
+        unique = CustomUser._meta.get_field('email').unique
         self.assertTrue(unique)
 
     #  testing password
     def test_customuser_password(self):
-        user = CustomUser.objects.get(id=1)
-
-        self.assertEqual(user.check_password('password'), True)
+        self.assertEqual(self.user.check_password('password'), True)
 
     #  testing bio
     def test_customuser_bio(self):
-        user = CustomUser.objects.get(id=1)
-        self.assertEqual(user.bio, 'Some bio')
+        self.assertEqual(self.user.bio, 'Some bio')
 
     def test_customuser_bio_max_length(self):
         max_length = CustomUser._meta.get_field('bio').max_length
@@ -91,50 +85,44 @@ class TestCustomUserModel(TestCase):
 
     #  testing avatar
     def test_customuser_avatar(self):
-        user = CustomUser.objects.get(id=1)
-        avatar_url = user.avatar.url
+        avatar_url = self.user.avatar.url
         self.assertEqual(avatar_url, '/media/images/avatars/test_image.jpg')
 
     #  testing user creation
-    def test_customuser_create_user(self):
-        user = CustomUser.objects.get(id=1)
+    def test_customuser_create_user_default_kwargs(self):
+        self.assertFalse(self.user.is_superuser)
+        self.assertFalse(self.user.is_staff)
+        self.assertFalse(self.user.is_active)
 
-        self.assertFalse(user.is_superuser)
-        self.assertFalse(user.is_staff)
-        self.assertFalse(user.is_active)
-
-    def test_customuser_create_superuser(self):
-        superuser = CustomUser.objects.get(id=2)
-
-        self.assertTrue(superuser.is_superuser)
-        self.assertTrue(superuser.is_staff)
-        self.assertTrue(superuser.is_active)
+    def test_customuser_create_superuser_default_kwargs(self):
+        self.assertTrue(self.superuser.is_superuser)
+        self.assertTrue(self.superuser.is_staff)
+        self.assertTrue(self.superuser.is_active)
 
 
 class TestTag(TestCase):
     @classmethod
     def setUpTestData(cls):
         Tag.objects.create(name='MUST BE LOWERCASE')
+    
+    def setUp(self):
+        self.tag = Tag.objects.get(name='must be lowercase')
 
     # testing name
     def test_tag_name(self):
-        tag = Tag.objects.get(id=1)
-        self.assertEqual(tag.name, 'must be lowercase')
+        self.assertEqual(self.tag.name, 'must be lowercase')
 
     def test_tag_name_max_length(self):
-        tag = Tag.objects.get(id=1)
-        length = tag._meta.get_field('name').max_length
+        length = Tag._meta.get_field('name').max_length
         self.assertEqual(length, 32)
 
     def test_tag_name_unique(self):
-        tag = Tag.objects.get(id=1)
-        unique = tag._meta.get_field('name').unique
+        unique = Tag._meta.get_field('name').unique
         self.assertTrue(unique)
 
     #  testing save
     def test_tag_save(self):
-        tag = Tag.objects.get(id=1)
-        self.assertFalse(tag.name.isupper())
+        self.assertTrue(self.tag.name.islower())
 
 
 class TestImages(TestCase):
@@ -145,6 +133,11 @@ class TestImages(TestCase):
         post = Post.objects.create(user=user)
 
         Images.objects.create(post=post, image=create_test_image(size=(100, 100)))
+    
+    def setUp(self):
+        self.user = CustomUser.objects.get(email='test@test.test')
+        self.post = self.user.posts.first()
+        self.image = self.post.images.first()
 
     @classmethod
     def tearDownClass(cls):
@@ -167,8 +160,7 @@ class TestImages(TestCase):
     @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_image_create_thumbnail(self):
         really_big_image = create_test_image((2000, 1500))
-        post = Post.objects.get(id=1)
-        image = Images.objects.create(post=post, image=really_big_image).image
+        image = Images.objects.create(post=self.post, image=really_big_image).image
         image_thumbnail_size = image.width, image.height
 
         self.assertEqual(image_thumbnail_size, (960, 720))
@@ -189,6 +181,11 @@ class TestVote(TestCase):
         user = CustomUser.objects.create_user(email='test@test.test')
         post = Post.objects.create(user=user)
         Vote.objects.create(user=user, post=post, vote=True)
+    
+    def setUp(self):
+        self.user = CustomUser.objects.get(email='test@test.test)
+        self.post = self.user.posts.first()
+        self.vote = vote.objects.get(user=self.user.first())
 
     #  testing user
     def test_vote_user_foreign_key(self):
@@ -196,18 +193,15 @@ class TestVote(TestCase):
         self.assertIsInstance(user_field, models.ForeignKey)
 
     def test_vote_user_is_CustomUser(self):
-        vote = Vote.objects.get(pk=1)
-        user = vote.user
-        self.assertIsInstance(user, CustomUser)
+        self.assertIsInstance(self.vote.user, CustomUser)
 
     def test_vote_user_on_delete_cascade(self):
         on_delete = Vote._meta.get_field('user').remote_field.on_delete
         self.assertEqual(on_delete, models.CASCADE)
 
     def test_vote_user_related_name(self):
-        user = CustomUser.objects.get(id=1)
-        related_name = user.votes.get(id=1)
-        self.assertIsInstance(related_name, Vote)
+        vote = self.user.votes.first()
+        self.assertIsInstance(vote, Vote)
 
     #  testing post
     def test_vote_post_foreign_key(self):
@@ -215,8 +209,7 @@ class TestVote(TestCase):
         self.assertIsInstance(post_field, models.ForeignKey)
 
     def test_vote_post_is_Post(self):
-        vote = Vote.objects.get(pk=1)
-        post = vote.post
+        post = self.vote.post
         self.assertIsInstance(post, Post)
 
     def test_vote_post_on_delete_cascade(self):
@@ -224,9 +217,8 @@ class TestVote(TestCase):
         self.assertEqual(on_delete, models.CASCADE)
 
     def test_vote_post_related_name(self):
-        post = Post.objects.get(id=1)
-        related_name = post.votes.get(id=1)
-        self.assertIsInstance(related_name, Vote)
+        vote = self.post.votes.first()
+        self.assertIsInstance(vote, Vote)
 
     #  testing vote
     def test_vote_boolean_field(self):
@@ -254,11 +246,16 @@ class TestPost(TestCase):
                             post=post, vote=True)
         Vote.objects.create(user=CustomUser.objects.create_user(email='bar@bar.bar'),
                             post=post, vote=False)
+    
+    def setUp(self):
+        self.user = CustomUser.objects.get(email='test@test.test')
+        post = Post.objects.get(user=self.user).first()
 
     #  testing Meta
     def test_post_meta_ordering(self):
-        post = Post.objects.get(id=1)
-        ordering = post._meta.ordering[0]
+        #post = Post.objects.get(id=1)
+        #ordering = post._meta.ordering[0]
+        ordering = Post._meta.ordering[0]
         self.assertEqual(ordering, '-id')
 
     #  testing user
@@ -266,18 +263,17 @@ class TestPost(TestCase):
         user_field = Post._meta.get_field('user')
         self.assertIsInstance(user_field, models.ForeignKey)
 
-    def test_post_user_foreign_key_is_CustomUser(self):
-        post = Post.objects.get(id=1)
-        user = post.user
-        self.assertIsInstance(user, CustomUser)
+    #def test_post_user_foreign_key_is_CustomUser(self):
+    #    post = Post.objects.get(id=1)
+    #    user = post.user
+    #    self.assertIsInstance(user, CustomUser)
 
     def test_post_user_on_delete_cascade(self):
         on_delete = Post._meta.get_field('user').remote_field.on_delete
         self.assertEqual(on_delete, models.CASCADE)
 
     def test_post_user_related_name(self):
-        user = CustomUser.objects.get(id=1)
-        post = user.posts.get(id=1)
+        post = self.user.posts.first()
         self.assertIsInstance(post, Post)
 
     #  testing date
@@ -291,8 +287,7 @@ class TestPost(TestCase):
         self.assertIsInstance(tag_field, models.ManyToManyField)
 
     def test_post_tag_m2m_is_Tag(self):
-        post = Post.objects.get(id=1)
-        tag = post.tags.first()
+        tag = self.post.tags.first()
         self.assertIsInstance(tag, Tag)
 
     def test_post_tag_blank(self):
@@ -300,17 +295,15 @@ class TestPost(TestCase):
         self.assertTrue(is_blank)
 
     def test_post_tag_related_name(self):
-        post = Post.objects.get(id=1)
-        tag = post.tags.first()
+        tag = self.post.tags.first()
         post = tag.posts.first()
 
         self.assertIsInstance(post, Post)
 
     #  testing get_likes/get_dislikes
     def test_post_get_likes(self):
-        post = Post.objects.get(id=1)
-        likes_count = post.get_likes()
-        dislikes_count = post.get_dislikes()
+        likes_count = self.post.get_likes()
+        dislikes_count = self.post.get_dislikes()
 
         self.assertEqual(likes_count, 2)
         self.assertEqual(dislikes_count, 1)

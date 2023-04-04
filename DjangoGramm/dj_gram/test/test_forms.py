@@ -95,7 +95,7 @@ class TestCustomUserFillForm(TestCase):
         self.assertEqual(res, expected_res)
 
     def test_password1_validation_is_present(self):
-        """Pass to form obviously invalid password to test validation"""
+        """Send to form obviously invalid password to test validation"""
         password1 = 'foo'
         form = CustomUserFillForm(data={'password1': password1})
         form.is_valid()
@@ -160,6 +160,9 @@ class TestMultipleTagsForm(TestCase):
     def setUpTestData(cls):
         user = CustomUser.objects.create_user(email='foo@foo.foo')
         Post.objects.create(user=user)
+    
+    def setUp(self):
+        self.post = Post.objects.first()
 
     #  testing Meta
     def test_model_is_Tag(self):
@@ -186,18 +189,16 @@ class TestMultipleTagsForm(TestCase):
         self.assertEqual(res, ['very'])
 
     def test_save_validation_error(self):
-        post = Post.objects.get(id=1)
         form = MultipleTagsForm(data={'name': '#tag'})
         form.is_valid()
-        self.failureException(forms.ValidationError, form.save(post=post, multiple=True))
+        self.failureException(forms.ValidationError, form.save(post=self.post, multiple=True))
 
     def test_save(self):
-        post = Post.objects.get(id=1)
         form = MultipleTagsForm(data={'name': '#tag, #foo'})
         form.is_valid()
-        form.save(post=post, multiple=True)
-        first_tag = post.tags.get(name='tag').name
-        second_tag = post.tags.get(name='foo').name
+        form.save(post=self.post, multiple=True)
+        first_tag = self.post.tags.get(name='tag').name
+        second_tag = self.post.tags.get(name='foo').name
 
         self.assertEqual(first_tag, 'tag')
         self.assertEqual(second_tag, 'foo')
@@ -208,6 +209,9 @@ class TestTagForm(TestCase):
     def setUpTestData(cls):
         user = CustomUser.objects.create_user(email='foo@foo.foo')
         Post.objects.create(user=user)
+    
+    def setUp(self):
+        self.post = Post.objects.first()
 
     #  testing Meta
     def test_model_is_Tag(self):
@@ -225,13 +229,12 @@ class TestTagForm(TestCase):
 
     def test_tag_already_exists(self):
         tag = Tag.objects.create(name='#tag')
-        post = Post.objects.get(id=1)
-        tag.posts.add(post)
+        tag.posts.add(self.post)
 
         form = TagForm(data={'name': '#tag'})
         form.is_valid()
-        form.save(post=post, multiple=False)
-        new_tag = Tag.objects.get(id=1)
+        form.save(post=self.post, multiple=False)
+        new_tag = Tag.objects.get(name='#tag')
 
         self.assertEqual(new_tag, tag)
 
@@ -255,10 +258,9 @@ class TestTagForm(TestCase):
             form.save(post=CustomUser, multiple=False)
 
     def test_save(self):
-        post = Post.objects.get(id=1)
         form = TagForm(data={'name': '#tag'})
         form.is_valid()
-        form.save(post=post, multiple=False)
-        new_tag = post.tags.get(name='tag').name
+        form.save(post=self.post, multiple=False)
+        new_tag = self.post.tags.get(name='tag').name
 
         self.assertEqual(new_tag, 'tag')

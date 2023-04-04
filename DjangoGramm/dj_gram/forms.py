@@ -41,7 +41,7 @@ class TagFormMixin:
         for _tag in tags:
             self.save_one_tag(tag=_tag, post=post)
 
-    def save(self, post, multiple: bool):
+    def save(self, post, multiple: bool, *args, **kwargs):
         if not isinstance(post, Post):
             raise ValidationError('Please attach post to tags')
 
@@ -65,6 +65,9 @@ class MultipleTagsForm(TagFormMixin, ModelForm):
     def clean(self):
         self._validate_unique = False
         return self.cleaned_data
+    
+    def save(post, *args, **kwargs):
+        super.save(post=post, multiple=True, *args, **kwargs)
 
 
 class TagForm(TagFormMixin, ModelForm):
@@ -75,6 +78,10 @@ class TagForm(TagFormMixin, ModelForm):
     def clean(self):
         self._validate_unique = False
         return self.cleaned_data
+    
+    def save(post, *args, **kwargs):
+        super.save(post=post, multiple=False, *args, **kwargs)
+
 
 
 class ImageForm(ModelForm):
