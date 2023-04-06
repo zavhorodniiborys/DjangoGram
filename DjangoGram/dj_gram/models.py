@@ -4,8 +4,10 @@ from io import BytesIO
 from PIL import Image
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db import models
+from django.db.models.signals import m2m_changed
 
 
 class CustomUserManager(BaseUserManager):
@@ -63,6 +65,7 @@ class Post(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='posts')
     date = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField(to='Tag', related_name='posts', blank=True)
+    max_tags_count = 5
 
     def get_likes(self):
         return self.votes.filter(vote=1).count()
@@ -73,13 +76,10 @@ class Post(models.Model):
     class Meta:
         ordering = ['-id']
     
-    def validate_count_tags_in_post(self, max_count=5):
-        tags_count = self.tags.all().count()
-        if tags_count >= max_count:
-            raise ValidationError(f'Post can\'t have more than {max_count} tags')
+
 
     def save(self, *args, **kwargs):
-        self.validate_count_tags_in_post()
+        # self.validate_count_tags_in_post()
         super(Post, self).save(*args, **kwargs)
 
 
@@ -135,3 +135,19 @@ class Tag(models.Model):
     def save(self, *args, **kwargs):
         self.name = self.name.lower()
         super(Tag, self).save(*args, **kwargs)
+
+
+def validate_count_tags_in_post(sender, action, **kwargs):
+    if action == 'pre_add':
+        instance = kwargs['instance']
+
+        if isinstance(instance, Post):
+            tags_count = instance.tags.all().count()
+        elif isinstance(instance, Tag):
+            tags_count = instance.posts.all().count()
+
+        if tags_count >= Post.max_tags_count:
+            raise ValidationError(f'Post can\'t have more than {Post.max_tags_count} tags')
+
+
+m2m_changed.connect(validate_count_tags_in_post, sender=Post.tags.through)

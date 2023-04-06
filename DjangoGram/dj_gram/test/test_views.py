@@ -27,9 +27,10 @@ class TestViewPost(TestCase):
                                               first_name='John', last_name='Doe', is_active=True)
         post = Post.objects.create(user=user)
         image = Images.objects.create(image=create_test_image(), post=post)
-    
-    self.setUp(self):
-        self.user = CustomUser.objects.get(name='foo@foo.foo')
+
+    def setUp(self):
+        self.user = CustomUser.objects.get(email='foo@foo.foo')
+        self.post = Post.objects.get(user=self.user)
 
     @classmethod
     def tearDownClass(cls):
@@ -38,18 +39,18 @@ class TestViewPost(TestCase):
 
     def test_view_post(self):
         #  testing access by anonymous user
-        response = self.client.get(reverse('dj_gram:view_post', kwargs={'pk': 1}), follow=True)
+        response = self.client.get(reverse('dj_gram:view_post', kwargs={'pk': self.post.id}), follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'authentication/login.html')
 
         #  testing access by authenticated user
         self.client.force_login(user=self.user)
-        response = self.client.get(reverse('dj_gram:view_post', kwargs={'pk': 1}), follow=True)
+        response = self.client.get(reverse('dj_gram:view_post', kwargs={'pk': self.post.id}), follow=True)
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'dj_gram/view_post.html')
         self.assertIsInstance(response.context['post'], Post)
-        self.assertEqual(response.context['post'].id, 1)
+        self.assertEqual(response.context['post'].id, self.post.id)
 
 
 class TestAddTag(TestCase):
@@ -60,7 +61,7 @@ class TestAddTag(TestCase):
                                               first_name='John', last_name='Doe', is_active=True)
         post = Post.objects.create(user=user)
         image = Images.objects.create(image=create_test_image(), post=post)
-    
+
     def setUp(self):
         self.user = CustomUser.objects.get(email='foo@foo.foo')
         self.post = Post.objects.first()
@@ -206,7 +207,7 @@ class TestVote(TestCase):
     def test_anonymous_user(self):
         response = self.client.get(reverse('dj_gram:vote', kwargs={'post_id': self.post.id, 'vote': 1}))
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('authentication:login_user') + '?next=/post/1/vote/1')
+        self.assertRedirects(response, reverse('authentication:login_user') + f'?next=/post/{self.post.id}/vote/1')
 
     def test_create_vote_like(self):
         self.client.force_login(self.user)
@@ -314,7 +315,7 @@ class TestFillProfile(TestCase):
         }
         response = self.client.get(reverse('dj_gram:fill_profile', kwargs=data))
         self.assertEqual(response.status_code, 200)
-        self.assertRedirects(response, reverse('dj_gram:fill_profile'))
+        self.assertTemplateUsed(response, 'dj_gram/create_profile.html')
 
     def test_template_name(self):
         template_name = FillProfile.template_name

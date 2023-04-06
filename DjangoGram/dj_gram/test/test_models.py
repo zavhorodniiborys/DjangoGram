@@ -103,10 +103,14 @@ class TestCustomUserModel(TestCase):
 class TestTag(TestCase):
     @classmethod
     def setUpTestData(cls):
+        user = CustomUser.objects.create_user(email='foo@foo.foo')
         Tag.objects.create(name='MUST BE LOWERCASE')
-    
+        post = Post.objects.create(user=user)
+
     def setUp(self):
+        self.user = CustomUser.objects.get(email='foo@foo.foo')
         self.tag = Tag.objects.get(name='must be lowercase')
+        self.post = Post.objects.get(user=self.user)
 
     # testing name
     def test_tag_name(self):
@@ -121,8 +125,15 @@ class TestTag(TestCase):
         self.assertTrue(unique)
 
     #  testing save
-    def test_tag_save(self):
+    def test_tag_save_islower(self):
         self.assertTrue(self.tag.name.islower())
+
+    def test_tag_save_validate_count(self):
+        count = Post.max_tags_count + 1
+        with self.assertRaises(ValidationError):
+            for tag in range(count):
+                tag_name = '#tag' + str(tag)
+                self.post.tags.add(Tag.objects.create(name=tag_name))
 
 
 class TestImages(TestCase):
@@ -145,8 +156,8 @@ class TestImages(TestCase):
         super().tearDownClass()
 
     def test_image_path(self):
-        image_path = Images.objects.get(id=1).image.url
-        self.assertEqual(image_path, '/media/images/post/1/IMAGE.jpg')
+        image_path = self.image.image.url
+        self.assertEqual(image_path, f'/media/images/post/{self.post.id}/IMAGE.jpg')
 
     def test_image_verbose_name(self):
         image_verbose_name = Images._meta.verbose_name
@@ -183,9 +194,9 @@ class TestVote(TestCase):
         Vote.objects.create(user=user, post=post, vote=True)
     
     def setUp(self):
-        self.user = CustomUser.objects.get(email='test@test.test)
+        self.user = CustomUser.objects.get(email='test@test.test')
         self.post = self.user.posts.first()
-        self.vote = vote.objects.get(user=self.user.first())
+        self.vote = Vote.objects.get(user=self.user)
 
     #  testing user
     def test_vote_user_foreign_key(self):
@@ -238,7 +249,8 @@ class TestPost(TestCase):
         post = Post.objects.create(user=user)
 
         #  creating tag for testing m2m
-        post.tags.add(Tag.objects.create(name='test_tag'))
+        tag = Tag.objects.create(name='test_tag')
+        post.tags.add(tag)
 
         #  creating votes for testing get_likes/dislikes functional
         Vote.objects.create(user=user, post=post, vote=True)
@@ -249,7 +261,7 @@ class TestPost(TestCase):
     
     def setUp(self):
         self.user = CustomUser.objects.get(email='test@test.test')
-        post = Post.objects.get(user=self.user).first()
+        self.post = Post.objects.get(user=self.user)
 
     #  testing Meta
     def test_post_meta_ordering(self):

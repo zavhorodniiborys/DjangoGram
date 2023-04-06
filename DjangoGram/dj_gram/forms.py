@@ -30,7 +30,7 @@ class TagFormMixin:
         return tags
 
     def save_one_tag(self, tag: str, post):
-        if Tag.objects.filter(name=tag).count():
+        if Tag.objects.filter(name=tag).exists():
             tag = Tag.objects.get(name=tag)
         else:
             tag = Tag.objects.create(name=tag)
@@ -66,8 +66,8 @@ class MultipleTagsForm(TagFormMixin, ModelForm):
         self._validate_unique = False
         return self.cleaned_data
     
-    def save(post, *args, **kwargs):
-        super.save(post=post, multiple=True, *args, **kwargs)
+    def save(self, post, *args, **kwargs):
+        super().save(post=post, multiple=True, *args, **kwargs)
 
 
 class TagForm(TagFormMixin, ModelForm):
@@ -79,8 +79,8 @@ class TagForm(TagFormMixin, ModelForm):
         self._validate_unique = False
         return self.cleaned_data
     
-    def save(post, *args, **kwargs):
-        super.save(post=post, multiple=False, *args, **kwargs)
+    def save(self, post, *args, **kwargs):
+        super().save(post=post, multiple=False, *args, **kwargs)
 
 
 

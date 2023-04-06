@@ -69,6 +69,9 @@ class TestCustomUserFillForm(TestCase):
     def setUpTestData(cls):
         CustomUser.objects.create_user(email='foo@foo.foo')
 
+    def setUp(self) -> None:
+        self.user = CustomUser.objects.get(email='foo@foo.foo')
+
     def test_model_is_CustomUserModel(self):
         model = CustomUserFillForm._meta.model
         self.assertEqual(model, CustomUser)
@@ -142,17 +145,16 @@ class TestCustomUserFillForm(TestCase):
         data['password1'] = password
         data['password2'] = password
 
-        user = CustomUser.objects.get(id=1)
-        form = CustomUserFillForm(data=data, files={'avatar': avatar.open()}, instance=user)
+        form = CustomUserFillForm(data=data, files={'avatar': avatar.open()}, instance=self.user)
         self.assertTrue(form.is_valid())
         form.save()
 
         for value, field in enumerate(fields):
             with self.subTest():
-                self.assertEqual(getattr(user, field), values[value])
+                self.assertEqual(getattr(self.user, field), values[value])
 
-        self.assertEqual(user.avatar.url, '/media/images/avatars/IMAGE.jpg')
-        self.assertTrue(user.check_password(password))
+        self.assertEqual(self.user.avatar.url, '/media/images/avatars/IMAGE.jpg')
+        self.assertTrue(self.user.check_password(password))
 
 
 class TestMultipleTagsForm(TestCase):
@@ -160,7 +162,7 @@ class TestMultipleTagsForm(TestCase):
     def setUpTestData(cls):
         user = CustomUser.objects.create_user(email='foo@foo.foo')
         Post.objects.create(user=user)
-    
+
     def setUp(self):
         self.post = Post.objects.first()
 
@@ -191,12 +193,12 @@ class TestMultipleTagsForm(TestCase):
     def test_save_validation_error(self):
         form = MultipleTagsForm(data={'name': '#tag'})
         form.is_valid()
-        self.failureException(forms.ValidationError, form.save(post=self.post, multiple=True))
+        self.failureException(forms.ValidationError, form.save(post=self.post))
 
     def test_save(self):
         form = MultipleTagsForm(data={'name': '#tag, #foo'})
         form.is_valid()
-        form.save(post=self.post, multiple=True)
+        form.save(post=self.post)
         first_tag = self.post.tags.get(name='tag').name
         second_tag = self.post.tags.get(name='foo').name
 
@@ -209,7 +211,7 @@ class TestTagForm(TestCase):
     def setUpTestData(cls):
         user = CustomUser.objects.create_user(email='foo@foo.foo')
         Post.objects.create(user=user)
-    
+
     def setUp(self):
         self.post = Post.objects.first()
 
@@ -233,7 +235,7 @@ class TestTagForm(TestCase):
 
         form = TagForm(data={'name': '#tag'})
         form.is_valid()
-        form.save(post=self.post, multiple=False)
+        form.save(post=self.post)
         new_tag = Tag.objects.get(name='#tag')
 
         self.assertEqual(new_tag, tag)
@@ -255,12 +257,12 @@ class TestTagForm(TestCase):
     def test_save_validation_error(self):
         form = TagForm(data={'name': '#tag'})
         with self.assertRaises(ValidationError):
-            form.save(post=CustomUser, multiple=False)
+            form.save(post=CustomUser)
 
     def test_save(self):
         form = TagForm(data={'name': '#tag'})
         form.is_valid()
-        form.save(post=self.post, multiple=False)
+        form.save(post=self.post)
         new_tag = self.post.tags.get(name='tag').name
 
         self.assertEqual(new_tag, 'tag')
