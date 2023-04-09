@@ -95,7 +95,7 @@ class ImageForm(ModelForm):
     def clean_image(self):
         if len(self.files.getlist('image')) > 10:
             self.add_error('image', f'Post can have up to {Images.max_count_images_in_post} images.')
-            return self.files.getlist('image')
+        return self.cleaned_data.get('image')
 
     def save(self, post=None):
         if not post:

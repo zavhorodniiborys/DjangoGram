@@ -11,7 +11,7 @@ class TestCustomUserModel(TestCase):
     @classmethod
     @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def setUpTestData(cls):
-        user = CustomUser.objects.create_user(email='test@test.com', password='password', first_name='John',
+        user = CustomUser.objects.create_user(email='tests@tests.com', password='password', first_name='John',
                                               last_name='Doe', bio='Some bio')
         avatar = SimpleUploadedFile('test_image.jpg', b'some content')
         user.avatar = avatar
@@ -20,7 +20,7 @@ class TestCustomUserModel(TestCase):
         CustomUser.objects.create_superuser(email='admin@admin.admin')
     
     def setUp(self):
-        self.user = CustomUser.objects.get(email='test@test.com')
+        self.user = CustomUser.objects.get(email='tests@tests.com')
         self.superuser = CustomUser.objects.get(email='admin@admin.admin')
 
     @classmethod
@@ -56,7 +56,7 @@ class TestCustomUserModel(TestCase):
 
     #  testing email
     def test_customuser_email(self):
-        self.assertEqual(self.user.email, 'test@test.com')
+        self.assertEqual(self.user.email, 'tests@tests.com')
 
     def test_customuser_email_max_length(self):
         max_length = CustomUser._meta.get_field('email').max_length
@@ -140,13 +140,13 @@ class TestImages(TestCase):
     @classmethod
     @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def setUpTestData(cls):
-        user = CustomUser.objects.create_user(email='test@test.test')
+        user = CustomUser.objects.create_user(email='tests@tests.tests')
         post = Post.objects.create(user=user)
 
         Images.objects.create(post=post, image=create_test_image(size=(100, 100)))
     
     def setUp(self):
-        self.user = CustomUser.objects.get(email='test@test.test')
+        self.user = CustomUser.objects.get(email='tests@tests.tests')
         self.post = self.user.posts.first()
         self.image = self.post.images.first()
 
@@ -175,26 +175,16 @@ class TestImages(TestCase):
         image_thumbnail_size = image.width, image.height
 
         self.assertEqual(image_thumbnail_size, (960, 720))
-    
-    # def test_count_images_in_post(self):
-    #     post = Post.objects.get(id=1)
-    #     for _ in range(8):
-    #         Images.objects.create(post=post, image=create_test_image(size=(100, 100)))
-    #
-    #     with self.assertRaises(ValidationError):
-    #         image = Images(post=post, image=create_test_image(size=(100, 100)))
-    #         image.save()
-
 
 class TestVote(TestCase):
     @classmethod
     def setUpTestData(cls):
-        user = CustomUser.objects.create_user(email='test@test.test')
+        user = CustomUser.objects.create_user(email='tests@tests.tests')
         post = Post.objects.create(user=user)
         Vote.objects.create(user=user, post=post, vote=True)
     
     def setUp(self):
-        self.user = CustomUser.objects.get(email='test@test.test')
+        self.user = CustomUser.objects.get(email='tests@tests.tests')
         self.post = self.user.posts.first()
         self.vote = Vote.objects.get(user=self.user)
 
@@ -245,7 +235,7 @@ class TestVote(TestCase):
 class TestPost(TestCase):
     @classmethod
     def setUpTestData(cls):
-        user = CustomUser.objects.create_user(email='test@test.test')
+        user = CustomUser.objects.create_user(email='tests@tests.tests')
         post = Post.objects.create(user=user)
 
         #  creating tag for testing m2m
@@ -260,13 +250,11 @@ class TestPost(TestCase):
                             post=post, vote=False)
     
     def setUp(self):
-        self.user = CustomUser.objects.get(email='test@test.test')
+        self.user = CustomUser.objects.get(email='tests@tests.tests')
         self.post = Post.objects.get(user=self.user)
 
     #  testing Meta
     def test_post_meta_ordering(self):
-        #post = Post.objects.get(id=1)
-        #ordering = post._meta.ordering[0]
         ordering = Post._meta.ordering[0]
         self.assertEqual(ordering, '-id')
 
@@ -274,11 +262,6 @@ class TestPost(TestCase):
     def test_post_user_foreign_key(self):
         user_field = Post._meta.get_field('user')
         self.assertIsInstance(user_field, models.ForeignKey)
-
-    #def test_post_user_foreign_key_is_CustomUser(self):
-    #    post = Post.objects.get(id=1)
-    #    user = post.user
-    #    self.assertIsInstance(user, CustomUser)
 
     def test_post_user_on_delete_cascade(self):
         on_delete = Post._meta.get_field('user').remote_field.on_delete

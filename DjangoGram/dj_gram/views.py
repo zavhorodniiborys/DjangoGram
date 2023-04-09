@@ -14,7 +14,6 @@ from django.core.mail import send_mail
 from django.contrib.sites.shortcuts import get_current_site
 from django.contrib import messages
 
-from .models import *
 from .forms import *
 from .tokens import account_activation_token
 

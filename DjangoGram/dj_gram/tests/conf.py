@@ -4,7 +4,7 @@ from PIL import Image
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.test import override_settings
 
-TEST_DIR = 'dj_gram/test/test_data'
+TEST_DIR = 'dj_gram/tests/test_data'
 
 
 def create_test_image(size=(100, 100)):

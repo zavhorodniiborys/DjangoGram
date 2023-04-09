@@ -1,12 +1,11 @@
 import shutil
 from unittest.mock import patch
 
-from django.contrib.auth import get_user_model
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import mail
 from django.core.exceptions import ObjectDoesNotExist
 from django.template.loader import render_to_string
-from django.test import TestCase, Client, override_settings
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.html import strip_tags
@@ -105,21 +104,8 @@ class TestAddTag(TestCase):
         self.assertTemplateUsed(response, 'dj_gram/add_tag.html')
         self.assertEqual(self.post.tags.count(), 0)
 
-    # def test_authenticated_user_POST_not_valid(self):
-    #     post = Post.objects.get(id=1)
-    #     user = CustomUser.objects.get(id=1)
-    #     self.client.force_login(user=user)
-    #
-    #     response = self.client.post(reverse('dj_gram:add_tag', kwargs={'post_id': post.id}), {'name': 'wrong_tag'},
-    #                                 follow=True)
-    #
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertTemplateUsed(response, 'dj_gram/view_post.html')
-    #     self.assertEqual(post.tags.first().name, 'tag')
-    #     self.assertTrue('error: true' in response.context)
 
-
-class Test_add_post(TestCase):
+class TestAddPost(TestCase):
     @classmethod
     @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def setUpTestData(cls):
@@ -282,19 +268,19 @@ class TestRegistration(TestCase):
 
         self.assertEqual(link, expected_link)
 
-    @patch('dj_gram.views.Registration._create_registration_link', return_value='test')
+    @patch('dj_gram.views.Registration._create_registration_link', return_value='tests')
     def test_create_registration_message(self, patcher):
         """
         Registration message is the template filled with registration_link.
         Method uses patching to mock _create_registration_link as we don't need real registation link
-        and only test template creation.
+        and only tests template creation.
         """
 
         user = CustomUser.objects.create_user(email='foo@foo.bar', is_active=False)
         response = self.client.get(reverse('dj_gram:registration'))
         res = Registration()._create_registration_message(response.context['request'], user)
 
-        expected_context = {'registration_link': 'test'}
+        expected_context = {'registration_link': 'tests'}
         expected_res = strip_tags(render_to_string('dj_gram/activate_email.html', expected_context))
 
         self.assertEqual(res, expected_res)

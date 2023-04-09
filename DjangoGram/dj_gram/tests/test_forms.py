@@ -4,6 +4,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile, SimpleUploadedF
 from django.core.exceptions import ValidationError as DJValidationError
 from django.test import TestCase, override_settings
 from django.contrib.auth import password_validation
+from django.utils.datastructures import MultiValueDict
 
 from ..forms import *
 from .conf import TEST_DIR, create_test_image
@@ -27,7 +28,7 @@ class TestImageForm(TestCase):
     @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_valid_form(self):
         image = create_test_image()
-        files = {'image': image.open()}
+        files = MultiValueDict({'image': [image.open()]})
         form = ImageForm(data=None, files=files)
 
         self.assertTrue(form.is_valid())
@@ -98,7 +99,7 @@ class TestCustomUserFillForm(TestCase):
         self.assertEqual(res, expected_res)
 
     def test_password1_validation_is_present(self):
-        """Send to form obviously invalid password to test validation"""
+        """Send to form obviously invalid password to tests validation"""
         password1 = 'foo'
         form = CustomUserFillForm(data={'password1': password1})
         form.is_valid()
