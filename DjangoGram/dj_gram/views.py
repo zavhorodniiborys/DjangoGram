@@ -15,6 +15,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, Http404
 from django.core.mail import send_mail
 from django.contrib.sites.shortcuts import get_current_site
+from django.contrib import messages
 
 from .models import *
 from .forms import *
@@ -77,10 +78,10 @@ class Registration(FormView):
     def form_valid(self, form):
         user = form.save()
 
-        message = self._create_registration_message(self.request, user)
+        mail_message = self._create_registration_message(self.request, user)
         send_mail(
             'Email confirmation',  # subject
-            message,  # message
+            mail_message,  # message
             EMAIL_HOST_USER,  # from email
             [user.email],  # to email
         )
@@ -92,6 +93,8 @@ class Registration(FormView):
         #     'token': token
         # }
         # return render(self.request, 'dj_gram/activate_email.html', self.context)
+        
+        messages.success(self.request, 'We\'ve sent the registration link to your email.')
         return super(Registration, self).form_valid(form)
 
     def get_success_url(self):
