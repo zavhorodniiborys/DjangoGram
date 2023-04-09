@@ -2,7 +2,7 @@ import os
 from io import BytesIO
 
 from PIL import Image
-from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
@@ -75,13 +75,10 @@ class Post(models.Model):
 
     class Meta:
         ordering = ['-id']
-    
-
 
     def save(self, *args, **kwargs):
         # self.validate_count_tags_in_post()
         super(Post, self).save(*args, **kwargs)
-
 
 
 class Vote(models.Model):
@@ -99,16 +96,17 @@ class Images(models.Model):
 
     post = models.ForeignKey(Post, related_name='images', on_delete=models.CASCADE)
     image = models.ImageField(upload_to=upload_path)
+    max_count_images_in_post = 10
 
     class Meta:
         verbose_name = 'image'
         verbose_name_plural = 'images'
-    
-    #def validate_count_images_in_post(self, max_count=10):
-     #   images_count = self.post.images.all().count()
-      #  if images_count >= max_count:
-       #     raise ValidationError(f'Post can\'t have more than {max_count} images')
-    
+
+    def validate_count_images_in_post(self):
+        images_count = self.post.images.all().count()
+        if images_count >= Images.max_count_images_in_post:
+            raise ValidationError(f'Post can\'t have more than {Images.max_count_images_in_post} images')
+
     def make_thumbnail(self):
         acceptable_image_size = (1280, 720)
         image = Image.open(self.image).convert('RGB')
@@ -121,9 +119,9 @@ class Images(models.Model):
         temp.seek(0)  # sets the file's start position
 
         self.image.save(image_name, ContentFile(temp.read()), save=False)  # ContentFile reads file as string of bytes
-    
+
     def save(self, *args, **kwargs):
-        #self.validate_count_images_in_post()
+        self.validate_count_images_in_post()
         self.make_thumbnail()
 
         super(Images, self).save(*args, **kwargs)

@@ -1,18 +1,15 @@
 from django.conf.global_settings import EMAIL_HOST_USER
-from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import IntegrityError
 from django.template.loader import render_to_string
-from django.urls import reverse_lazy, reverse
+from django.urls import reverse
 from django.utils.encoding import force_bytes, force_str
 from django.utils.html import strip_tags
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.views.generic import ListView, DetailView
-from django.views.generic.edit import CreateView, FormView
+from django.views.generic.edit import FormView
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, Http404
+from django.http import Http404
 from django.core.mail import send_mail
 from django.contrib.sites.shortcuts import get_current_site
 from django.contrib import messages
@@ -85,20 +82,11 @@ class Registration(FormView):
             EMAIL_HOST_USER,  # from email
             [user.email],  # to email
         )
-
-        # self.context = {
-        #     'domain': domain,
-        #     'uidb64': u_id,
-        #     'umailb64': u_email,
-        #     'token': token
-        # }
-        # return render(self.request, 'dj_gram/activate_email.html', self.context)
         
         messages.success(self.request, 'We\'ve sent the registration link to your email.')
         return super(Registration, self).form_valid(form)
 
     def get_success_url(self):
-        # message
         return reverse('dj_gram:registration')
 
 

@@ -83,7 +83,6 @@ class TagForm(TagFormMixin, ModelForm):
         super().save(post=post, multiple=False, *args, **kwargs)
 
 
-
 class ImageForm(ModelForm):
     class Meta:
         model = Images
@@ -92,6 +91,11 @@ class ImageForm(ModelForm):
         widgets = {
             'image': ClearableFileInput(attrs={'multiple': True}),
         }
+
+    def clean_image(self):
+        if len(self.files.getlist('image')) > 10:
+            self.add_error('image', f'Post can have up to {Images.max_count_images_in_post} images.')
+            return self.files.getlist('image')
 
     def save(self, post=None):
         if not post:
