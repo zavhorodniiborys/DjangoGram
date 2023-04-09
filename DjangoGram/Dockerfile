@@ -1,0 +1,15 @@
+FROM python:3.8.16-alpine
+WORKDIR /DjangoGram
+COPY docker-entrypoint.sh docker-entrypoint.sh
+COPY requirements.txt requirements.txt
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+COPY . .
+RUN  python -m pip install --upgrade pip &&\
+    apk add -u gcc musl-dev &&\
+    pip install -r requirements.txt &&\
+    apk del gcc musl-dev &&\
+    chmod +x docker-entrypoint.sh
+
+# CMD ["python", "manage.py", "migrate"]
+# CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
