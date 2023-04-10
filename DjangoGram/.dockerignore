@@ -1,2 +1,2 @@
 venv
-DjangoGram/*.env
+env/*.env
