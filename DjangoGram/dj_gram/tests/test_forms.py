@@ -135,7 +135,6 @@ class TestCustomUserFillForm(TestCase):
 
         self.assertEqual(form.errors['password2'][0], "Passwords don't match")
 
-    # testing save
     @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_save(self):
         avatar = create_test_image()

@@ -42,8 +42,20 @@ class AddTag(LoginRequiredMixin, FormView):
     template_name = 'dj_gram/add_tag.html'
     form_class = TagForm
 
-    def form_valid(self, form):
-        post = Post.objects.get(pk=self.kwargs['post_id'])  # maybe I should check if user is author of the post
+    def post(self, request, *args, **kwargs):
+        post = Post.objects.get(pk=self.kwargs['post_id'])
+        user = self.request.user
+        if user == post.user:
+            form = self.get_form()
+            if form.is_valid():
+                return self.form_valid(form, post)
+            else:
+                return self.form_invalid(form)
+        else:
+            self.request.GET = None
+            return redirect('authentication:logout_user')
+
+    def form_valid(self, form, post):
         form.save(post=post)
         return super(AddTag, self).form_valid(form)
 
@@ -76,10 +88,10 @@ class Registration(FormView):
 
         mail_message = self._create_registration_message(self.request, user)
         send_mail(
-            'Email confirmation',  # subject
-            mail_message,  # message
-            EMAIL_HOST_USER,  # from email
-            [user.email],  # to email
+            subject='Email confirmation',
+            message=mail_message,
+            from_email=EMAIL_HOST_USER,
+            recipient_list=[user.email]
         )
         
         messages.success(self.request, 'We\'ve sent the registration link to your email.')

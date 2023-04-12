@@ -11,11 +11,11 @@ from django.utils.encoding import force_bytes
 from django.utils.html import strip_tags
 from django.utils.http import urlsafe_base64_encode
 
-from ..forms import TagForm, CustomUserCreationForm, CustomUserFillForm
-from ..models import *
+from dj_gram.forms import TagForm, CustomUserCreationForm, CustomUserFillForm
+from dj_gram.models import *
 from .conf import create_test_image, TEST_DIR
-from ..tokens import account_activation_token
-from ..views import AddTag, Feed, Registration, FillProfile
+from dj_gram.tokens import account_activation_token
+from dj_gram.views import AddTag, Feed, Registration, FillProfile
 
 
 class TestViewPost(TestCase):
@@ -85,6 +85,16 @@ class TestAddTag(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'dj_gram/add_tag.html')
+
+    def test_authenticated_user_not_post_author_POST(self):
+        user = CustomUser.objects.create_user(email='bar@bar.bar', is_active=True)
+        self.client.force_login(user=user)
+        response = self.client.post(reverse('dj_gram:add_tag', kwargs={'post_id': self.post.id}), {'name': '#tag'},
+                                    follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertRedirects(response, reverse('authentication:login_user'))
+        self.assertFalse(self.post.tags.exists())
 
     def test_authenticated_user_POST_success(self):
         self.client.force_login(user=self.user)
