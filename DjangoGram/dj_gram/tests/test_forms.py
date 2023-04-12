@@ -1,12 +1,7 @@
-from unittest.mock import patch
-
-from django.core.files.uploadedfile import InMemoryUploadedFile, SimpleUploadedFile
-from django.core.exceptions import ValidationError as DJValidationError
 from django.test import TestCase, override_settings
-from django.contrib.auth import password_validation
 from django.utils.datastructures import MultiValueDict
 
-from ..forms import *
+from dj_gram.forms import *
 from .conf import TEST_DIR, create_test_image
 
 

@@ -2,10 +2,8 @@ import re
 
 from django import forms
 from django.contrib.auth import password_validation
-from django.contrib.auth.forms import UserCreationForm, UserChangeForm, PasswordChangeForm
-from django.core.exceptions import ValidationError
-from django.forms import ModelForm, ClearableFileInput, ImageField, PasswordInput, ModelMultipleChoiceField, CharField, \
-    Textarea
+from django.contrib.auth.forms import UserChangeForm
+from django.forms import ModelForm, ClearableFileInput, PasswordInput, CharField, Textarea
 
 from .models import *
 

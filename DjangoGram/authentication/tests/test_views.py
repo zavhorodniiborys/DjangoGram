@@ -3,7 +3,7 @@ from django.test import TestCase
 
 from django.urls import reverse
 
-from ..views import LoginUser
+from authentication.views import LoginUser
 import dj_gram.models as models
 
 
