@@ -1,0 +1,2 @@
+<a href="{% url 'dj_gram:vote' post.id 1 %}"><button>like</button></a> {{post.get_likes}}
+<a href="{% url 'dj_gram:vote' post.id 0 %}"><button>dislike</button></a> {{post.get_dislikes}}
