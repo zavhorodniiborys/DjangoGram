@@ -11,7 +11,7 @@
         <ul style="padding: 10px;">
           <li style="display: inline;"><a href="{% url 'dj_gram:feed' %}">FEED</a></li>
           <li style="display: inline;"><a href="#">POSTS</a></li>
-          <li style="display: inline;"><a href="#">PROFILE</a></li>
+          <li style="display: inline;"><a href="{% url 'dj_gram:profile' request.user.id%}">{{request.user.first_name}} {{request.user.last_name}}</a></li>
           <li style="display: inline; float:right"><a href="{% url 'authentication:logout_user' %}">LOGOUT</a></li>
         </ul>
       </nav>

@@ -14,17 +14,19 @@ class TagFormMixin:
     Use multiple = True to parse and save more than one tag in string.
     Tags must start with '#'.
     """
-    def parse_tags(self, multiple: bool):
+
+    def clean_name(self):
         tags = self.cleaned_data.get('name').lower()
 
-        if multiple:
+        if self.multiple_tags_allowed:
             tags = re.findall(r'#(\w{2,})\b', tags)
         else:
             tags = re.search(r'#(\w{2,})\b', tags)
-            if not tags:
-                raise ValidationError('Wrong tag format. Tag must start with "#".')
+            if tags:
+                tags = ''.join(tags.group(1))  # group(1) because re.search includes "#"
 
-            tags = ''.join(tags.group(1))  # group(1) because re.search includes "#"
+        if not tags:
+            self.add_error('name', 'Wrong tag format. Tags must start with "#".')
         return tags
 
     def save_one_tag(self, tag: str, post):
@@ -39,15 +41,16 @@ class TagFormMixin:
         for _tag in tags:
             self.save_one_tag(tag=_tag, post=post)
 
-    def save(self, post, multiple: bool, *args, **kwargs):
+    def save(self, post, *args, **kwargs):
         if not isinstance(post, Post):
             raise ValidationError('Please attach post to tags')
 
-        parsed_tags = self.parse_tags(multiple)
+        parsed_tags = self.cleaned_data.get('name')
+
         if not parsed_tags:
             return
 
-        if multiple:
+        if self.multiple_tags_allowed:
             self.save_multiple_tags(tags=parsed_tags, post=post)
         else:
             self.save_one_tag(tag=parsed_tags, post=post)
@@ -60,18 +63,26 @@ class MultipleTagsForm(TagFormMixin, ModelForm):
         model = Tag
         fields = ('name',)
 
+    def __init__(self, *args, **kwargs):
+        self.multiple_tags_allowed = True
+        super(MultipleTagsForm, self).__init__(*args, **kwargs)
+
     def clean(self):
         self._validate_unique = False
         return self.cleaned_data
     
     def save(self, post, *args, **kwargs):
-        super().save(post=post, multiple=True, *args, **kwargs)
+        super().save(post=post, *args, **kwargs)
 
 
 class TagForm(TagFormMixin, ModelForm):
     class Meta:
         model = Tag
         fields = ('name',)
+
+    def __init__(self, *args, **kwargs):
+        self.multiple_tags_allowed = False
+        super(TagForm, self).__init__(*args, **kwargs)
 
     def clean(self):
         self._validate_unique = False
@@ -147,6 +158,10 @@ class CustomUserFillForm(ModelForm):
         if commit:
             user.save()
         return user
+
+
+class CustomUserChangeForm():
+    pass
 
 
 class CustomUserAdminCreateForm(UserChangeForm):

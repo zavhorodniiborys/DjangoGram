@@ -1,10 +1,9 @@
 <div class="post-header">
     <div>
         {% if post.user.avatar %}
-        <img src="{{post.user.avatar.url}}" width="30px" height="30px">
+        <a href="{% url 'dj_gram:profile' post.user.id%}"><img src="{{post.user.avatar.url}}" width="30px" height="30px"></a>
         {% endif %}
-        {{post.user.first_name}}
-        {{post.user.last_name}}
+        <a href="{% url 'dj_gram:profile' post.user.id%}">{{post.user.first_name}} {{post.user.last_name}}</a>
         {{post.date}}
     </div>
 </div>

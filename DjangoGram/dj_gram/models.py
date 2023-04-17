@@ -54,11 +54,21 @@ class CustomUser(AbstractUser):
     email = models.EmailField(verbose_name='email address', unique=True, max_length=255)
     bio = models.TextField(max_length=512)
     avatar = models.ImageField(upload_to='images/avatars/')
+    follow_count = models.IntegerField(default=0)
+    followed_count = models.IntegerField(default=0)
 
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
+
+
+class Follow(models.Model):
+    user = models.ForeignKey(CustomUser, related_name='follower', on_delete=models.CASCADE)
+    followed_id = models.ForeignKey(CustomUser, related_name='followed', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user', 'followed_id')
 
 
 class Post(models.Model):

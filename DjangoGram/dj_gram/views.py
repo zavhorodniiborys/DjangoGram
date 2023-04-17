@@ -1,13 +1,15 @@
 from django.conf.global_settings import EMAIL_HOST_USER
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
+from django.db import IntegrityError
 from django.template.loader import render_to_string
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils.encoding import force_bytes, force_str
 from django.utils.html import strip_tags
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.views.generic import ListView, DetailView
-from django.views.generic.edit import FormView
+from django.views.generic.edit import FormView, UpdateView
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import Http404
 from django.core.mail import send_mail
@@ -93,7 +95,7 @@ class Registration(FormView):
             from_email=EMAIL_HOST_USER,
             recipient_list=[user.email]
         )
-        
+
         messages.success(self.request, 'We\'ve sent the registration link to your email.')
         return super(Registration, self).form_valid(form)
 
@@ -130,6 +132,41 @@ class FillProfile(FormView):
         return reverse('authentication:login_user')
 
 
+class ProfilePage(DetailView):
+    model = CustomUser
+    context_object_name = 'profile'
+    template_name = 'dj_gram/profile_page.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.id != self.kwargs['pk']:
+            try:
+                Follow.objects.get(user=self.request.user, followed_id=CustomUser.objects.get(id=self.kwargs['pk']))
+                context['is_followed'] = True
+            except Follow.DoesNotExist:
+                context['is_followed'] = False
+        else:
+            context['is_followed'] = False
+        return context
+
+
+class EditProfilePage(UpdateView):
+    model = CustomUser
+    fields = ['first_name', 'last_name', 'bio', 'avatar']
+    template_name = 'dj_gram/edit_profile_page.html'
+    success_url = reverse_lazy('dj_gram:feed')
+
+    def get(self, request, *args, **kwargs):
+        if request.user.id != self.kwargs['pk']:
+            raise PermissionDenied()
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        if request.user.id != self.kwargs['pk']:
+            raise PermissionDenied()
+        return super().post(request, *args, **kwargs)
+
+
 class Feed(LoginRequiredMixin, ListView):
     model = Post
     context_object_name = 'posts'
@@ -156,9 +193,41 @@ def vote(request, post_id, vote):
 
     else:
         if user_vote.vote == vote:
-            user_vote.delete()  # maybe it will be better to mark vote as "inactive" and not delete it
+            user_vote.delete()
         else:
             user_vote.vote = vote
             user_vote.save()
 
     return redirect(request.META.get('HTTP_REFERER'))
+
+
+@login_required
+def subscribe(request, followed_user_id, action):
+    if request.user.id != followed_user_id:
+        followed_user = get_object_or_404(CustomUser, id=followed_user_id)
+        if action == 'subscribe':
+            try:
+                Follow.objects.create(user=request.user, followed_id=followed_user)
+                followed_user.followed_count = followed_user.followed_count + 1
+                followed_user.save()
+                request.user.follow_count = request.user.follow_count + 1
+                request.user.save()
+                messages.success(request, 'You\'ve successfully followed user.')
+            except IntegrityError:
+                messages.error(request, 'You\'ve already followed this user.')
+        elif action == 'unsubscribe':
+            try:
+                follow = Follow.objects.get(user=request.user, followed_id=followed_user)
+                follow.delete()
+                followed_user.followed_count = followed_user.followed_count - 1
+                followed_user.save()
+                request.user.follow_count = request.user.follow_count - 1
+                request.user.save()
+                messages.success(request, 'You\'ve successfully unfollowed user.')
+            except Follow.DoesNotExist:
+                pass
+
+        return redirect(request.META.get('HTTP_REFERER'))
+
+    else:
+        messages.error(request, 'Choose another account to subscribe.')

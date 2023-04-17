@@ -1,0 +1,30 @@
+{% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li class="{{ message.tags }}">{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{{profile.first_name}}
+</br>
+{{profile.last_name}}
+</br>
+{{profile.bio}}
+</br>
+Followed by: {{profile.followed_count}}
+</br>
+Follow: {{profile.follow_count}}
+</br>
+<img src="{{profile.avatar.url}}" width="120px" height="120px">
+{% if profile.id == request.user.id %}
+<a href="{% url 'dj_gram:edit_profile' profile.id%}"><button>Edit profile</button></a>
+{% endif %}
+
+{% if profile.id != request.user.id %}
+  {% if not is_followed %}
+  <a href="{% url 'dj_gram:subscribe' profile.id 'subscribe' %}"><button>Subscribe</button></a>
+  {% else %}
+  <a href="{% url 'dj_gram:subscribe' profile.id 'unsubscribe' %}"><button>Unsubscribe</button></a>
+  {% endif %}
+{% endif %}
