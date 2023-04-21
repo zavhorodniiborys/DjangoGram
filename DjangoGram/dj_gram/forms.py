@@ -16,17 +16,17 @@ class TagFormMixin:
     """
 
     def clean_name(self):
-        tags = self.cleaned_data.get('name').lower()
+        tags = self.cleaned_data.get('name', None).lower()
+        if tags:
+            if self.multiple_tags_allowed:
+                tags = re.findall(r'#(\w{2,})\b', tags)
+            else:
+                tags = re.search(r'#(\w{2,})\b', tags)
+                if tags:
+                    tags = ''.join(tags.group(1))  # group(dj_gram_dev.env) because re.search includes "#"
 
-        if self.multiple_tags_allowed:
-            tags = re.findall(r'#(\w{2,})\b', tags)
-        else:
-            tags = re.search(r'#(\w{2,})\b', tags)
-            if tags:
-                tags = ''.join(tags.group(1))  # group(1) because re.search includes "#"
-
-        if not tags:
-            self.add_error('name', 'Wrong tag format. Tags must start with "#".')
+            if not tags:
+                self.add_error('name', 'Wrong tag format. Tags must start with "#".')
         return tags
 
     def save_one_tag(self, tag: str, post):
@@ -70,7 +70,7 @@ class MultipleTagsForm(TagFormMixin, ModelForm):
     def clean(self):
         self._validate_unique = False
         return self.cleaned_data
-    
+
     def save(self, post, *args, **kwargs):
         super().save(post=post, *args, **kwargs)
 
@@ -87,7 +87,7 @@ class TagForm(TagFormMixin, ModelForm):
     def clean(self):
         self._validate_unique = False
         return self.cleaned_data
-    
+
     def save(self, post, *args, **kwargs):
         super().save(post=post, multiple=False, *args, **kwargs)
 

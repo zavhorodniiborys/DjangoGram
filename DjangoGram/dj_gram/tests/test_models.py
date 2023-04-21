@@ -67,7 +67,7 @@ class TestCustomUserModel(TestCase):
         self.assertEqual(verbose_name, 'email address')
 
     def test_customuser_email_unique(self):
-        #  user = CustomUser.objects.get(id=1)
+        #  user = CustomUser.objects.get(id=dj_gram_dev.env)
         unique = CustomUser._meta.get_field('email').unique
         self.assertTrue(unique)
 

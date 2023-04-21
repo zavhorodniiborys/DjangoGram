@@ -1,3 +1,4 @@
+import cloudinary
 from django.conf.global_settings import EMAIL_HOST_USER
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -8,10 +9,11 @@ from django.urls import reverse, reverse_lazy
 from django.utils.encoding import force_bytes, force_str
 from django.utils.html import strip_tags
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.views import View
 from django.views.generic import ListView, DetailView
-from django.views.generic.edit import FormView, UpdateView
+from django.views.generic.edit import FormView, UpdateView, DeleteView
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import Http404
+from django.http import Http404, HttpResponseRedirect
 from django.core.mail import send_mail
 from django.contrib.sites.shortcuts import get_current_site
 from django.contrib import messages
@@ -38,6 +40,41 @@ def add_post(request):
 
     context = {'multiple_tags_form': multiple_tags_form, 'image_form': image_form}
     return render(request, 'dj_gram/add_post.html', context)
+
+
+class DeletePost(LoginRequiredMixin, DeleteView):
+    model = Post
+    success_url = reverse_lazy('dj_gram:feed')
+    
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        context = self.get_context_data(object=self.object)
+        context['previous_page'] = request.META.get('HTTP_REFERER', '/')
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        # Set self.object before the usual form processing flow.
+        # Inlined because having DeletionMixin as the first base, for
+        # get_success_url(), makes leveraging super() with ProcessFormView
+        # overly complex.
+        self.object = self.get_object()
+        if self.request.user != self.object.user:
+            raise PermissionDenied()
+
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def form_valid(self, form):
+        self.object = self.get_object()
+
+        images = Images.objects.filter(post=self.object)
+        for image in images:
+            cloudinary.uploader.destroy(image.image.public_id, invalidate=True)
+        
+        return super().form_valid(form)
 
 
 class AddTag(LoginRequiredMixin, FormView):
@@ -139,9 +176,9 @@ class ProfilePage(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if self.request.user.id != self.kwargs['pk']:
+        if self.request.user.id != context['profile']:
             try:
-                Follow.objects.get(user=self.request.user, followed_id=CustomUser.objects.get(id=self.kwargs['pk']))
+                Follow.objects.get(user=self.request.user, followed_id=context['profile'])
                 context['is_followed'] = True
             except Follow.DoesNotExist:
                 context['is_followed'] = False
@@ -201,33 +238,38 @@ def vote(request, post_id, vote):
     return redirect(request.META.get('HTTP_REFERER'))
 
 
-@login_required
-def subscribe(request, followed_user_id, action):
-    if request.user.id != followed_user_id:
-        followed_user = get_object_or_404(CustomUser, id=followed_user_id)
-        if action == 'subscribe':
-            try:
-                Follow.objects.create(user=request.user, followed_id=followed_user)
-                followed_user.followed_count = followed_user.followed_count + 1
-                followed_user.save()
-                request.user.follow_count = request.user.follow_count + 1
-                request.user.save()
-                messages.success(request, 'You\'ve successfully followed user.')
-            except IntegrityError:
-                messages.error(request, 'You\'ve already followed this user.')
-        elif action == 'unsubscribe':
-            try:
-                follow = Follow.objects.get(user=request.user, followed_id=followed_user)
-                follow.delete()
-                followed_user.followed_count = followed_user.followed_count - 1
-                followed_user.save()
-                request.user.follow_count = request.user.follow_count - 1
-                request.user.save()
-                messages.success(request, 'You\'ve successfully unfollowed user.')
-            except Follow.DoesNotExist:
-                pass
+class Subscribe(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        if request.user.id != self.kwargs['followed_user_id']:
+            followed_user = get_object_or_404(CustomUser, id=self.kwargs['followed_user_id'])
 
-        return redirect(request.META.get('HTTP_REFERER'))
+            if self.kwargs['action'] == 'subscribe':
+                self.subscribe(request, followed_user)
+            elif self.kwargs['action'] == 'unsubscribe':
+                self.unsubscribe(request, followed_user)
 
-    else:
-        messages.error(request, 'Choose another account to subscribe.')
+            return redirect(request.META.get('HTTP_REFERER'))
+        else:
+            messages.error(request, 'Choose another account to subscribe.')
+
+    @staticmethod
+    def subscribe(request, followed_user):
+        try:
+            Follow.objects.create(user=request.user, followed_id=followed_user)
+            followed_user.followed_count = followed_user.followed_count + 1
+            followed_user.save()
+            request.user.follow_count = request.user.follow_count + 1
+            request.user.save()
+            messages.success(request, 'You\'ve successfully followed user.')
+        except IntegrityError:
+            messages.error(request, 'You\'ve already followed this user.')
+
+    @staticmethod
+    def unsubscribe(request, followed_user):
+        follow = get_object_or_404(Follow, user=request.user, followed_id=followed_user)
+        follow.delete()
+        followed_user.followed_count = followed_user.followed_count - 1
+        followed_user.save()
+        request.user.follow_count = request.user.follow_count - 1
+        request.user.save()
+        messages.success(request, 'You\'ve successfully unfollowed user.')

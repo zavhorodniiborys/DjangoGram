@@ -67,7 +67,7 @@ class TestAddTag(TestCase):
 
     def test_anonymous_user(self):
         response = self.client.get(reverse('dj_gram:add_tag', kwargs={'post_id': 1}), follow=True)
-        self.assertRedirects(response, reverse('authentication:login_user') + '?next=/post/1/add_tag')
+        self.assertRedirects(response, reverse('authentication:login_user') + '?next=/post/dj_gram_dev.env/add_tag')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'authentication/login.html')
 
@@ -203,7 +203,7 @@ class TestVote(TestCase):
     def test_anonymous_user(self):
         response = self.client.get(reverse('dj_gram:vote', kwargs={'post_id': self.post.id, 'vote': 1}))
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('authentication:login_user') + f'?next=/post/{self.post.id}/vote/1')
+        self.assertRedirects(response, reverse('authentication:login_user') + f'?next=/post/{self.post.id}/vote/dj_gram_dev.env')
 
     def test_create_vote_like(self):
         self.client.force_login(self.user)

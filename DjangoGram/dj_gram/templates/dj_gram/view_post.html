@@ -16,6 +16,7 @@
 
     {% block add_tag %}
     {% endblock %}
+    <a href="{% url 'dj_gram:delete_post' post.id %}"><button>Delete post</button></a>
 
 {% else %}
 NO POST

@@ -1,11 +1,14 @@
 import os
+import sys
 from io import BytesIO
 
 from PIL import Image
+from cloudinary.models import CloudinaryField
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.db import models
 from django.db.models.signals import m2m_changed
 
@@ -65,7 +68,7 @@ class CustomUser(AbstractUser):
 
 class Follow(models.Model):
     user = models.ForeignKey(CustomUser, related_name='follower', on_delete=models.CASCADE)
-    followed_id = models.ForeignKey(CustomUser, related_name='followed', on_delete=models.CASCADE)
+    followed_id = models.ForeignKey(CustomUser, related_name='followed', on_delete=models.CASCADE, null=True)
 
     class Meta:
         unique_together = ('user', 'followed_id')
@@ -105,7 +108,8 @@ class Images(models.Model):
         return os.path.join('images', 'post', str(self.post.id), filename)
 
     post = models.ForeignKey(Post, related_name='images', on_delete=models.CASCADE)
-    image = models.ImageField(upload_to=upload_path)
+    image = CloudinaryField('image', folder=os.path.join('images', 'post'))
+    # image = models.ImageField(upload_to=upload_path)
     max_count_images_in_post = 10
 
     class Meta:
@@ -120,22 +124,18 @@ class Images(models.Model):
     def make_thumbnail(self):
         acceptable_image_size = (1280, 720)
         image = Image.open(self.image).convert('RGB')
-        image_name = self.image.name
-
         image.thumbnail(acceptable_image_size)
-
         temp = BytesIO()  # because thumbnail must be saved in binary mode
         image.save(temp, 'jpeg')
         temp.seek(0)  # sets the file's start position
-
-        self.image.save(image_name, ContentFile(temp.read()), save=False)  # ContentFile reads file as string of bytes
+        self.image.file = temp
+        self.image.size = sys.getsizeof(temp)
 
     def save(self, *args, **kwargs):
         self.validate_count_images_in_post()
         self.make_thumbnail()
-
         super(Images, self).save(*args, **kwargs)
-
+    
 
 class Tag(models.Model):
     name = models.CharField(max_length=32, unique=True)
