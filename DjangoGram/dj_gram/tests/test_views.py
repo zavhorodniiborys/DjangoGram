@@ -15,7 +15,10 @@ from dj_gram.forms import TagForm, CustomUserCreationForm, CustomUserFillForm
 from dj_gram.models import *
 from .conf import create_test_image, TEST_DIR
 from dj_gram.tokens import account_activation_token
-from dj_gram.views import AddTag, Feed, Registration, FillProfile
+from dj_gram.views import AddTag, Feed, Registration, FillProfile, ViewPost, Voting, Subscribe
+
+from .. import views
+from ..views import AddPost, Vote
 
 
 class TestViewPost(TestCase):
@@ -47,9 +50,15 @@ class TestViewPost(TestCase):
         response = self.client.get(reverse('dj_gram:view_post', kwargs={'pk': self.post.id}), follow=True)
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'dj_gram/view_post.html')
+        self.assertTemplateUsed(response, 'dj_gram/post.html')
         self.assertIsInstance(response.context['post'], Post)
         self.assertEqual(response.context['post'].id, self.post.id)
+
+    def test_mixins_is_present(self):
+        mixins = (views.HeaderContextMixin, views.PostContextMixin, views.LoginRequiredMixin)
+        for mixin in mixins:
+            with self.subTest():
+                self.assertTrue(mixin in ViewPost.__bases__)
 
 
 class TestAddTag(TestCase):
@@ -65,9 +74,15 @@ class TestAddTag(TestCase):
         self.user = CustomUser.objects.get(email='foo@foo.foo')
         self.post = Post.objects.first()
 
+    def test_mixins_is_present(self):
+        mixins = (views.LoginRequiredMixin,)
+        for mixin in mixins:
+            with self.subTest(mixin=mixin):
+                self.assertTrue(mixin in AddTag.__bases__)
+
     def test_anonymous_user(self):
-        response = self.client.get(reverse('dj_gram:add_tag', kwargs={'post_id': 1}), follow=True)
-        self.assertRedirects(response, reverse('authentication:login_user') + '?next=/post/dj_gram_dev.env/add_tag')
+        response = self.client.get(reverse('dj_gram:add_tag', kwargs={'post_id': self.post.id}), follow=True)
+        self.assertRedirects(response, reverse('authentication:login_user') + f'?next=/post/{self.post.id}/add_tag')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'authentication/login.html')
 
@@ -102,7 +117,7 @@ class TestAddTag(TestCase):
                                     follow=True)
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'dj_gram/view_post.html')
+        self.assertTemplateUsed(response, 'dj_gram/post.html')
         self.assertEqual(self.post.tags.first().name, 'tag')
 
     def test_authenticated_user_POST_empty(self):
@@ -124,6 +139,12 @@ class TestAddPost(TestCase):
 
     def setUp(self):
         self.user = CustomUser.objects.get(email='foo@foo.foo')
+
+    def test_mixins_is_present(self):
+        mixins = (views.HeaderContextMixin, views.LoginRequiredMixin)
+        for mixin in mixins:
+            with self.subTest():
+                self.assertTrue(mixin in AddPost.__bases__)
 
     def test_anonymous_user(self):
         response = self.client.get(reverse('dj_gram:add_post'), follow=True)
@@ -166,10 +187,15 @@ class TestAddPost(TestCase):
 
 
 class TestFeed(TestCase):
+    def test_mixins_is_present(self):
+        mixins = (views.HeaderContextMixin, views.PostContextMixin)
+        for mixin in mixins:
+            with self.subTest():
+                self.assertTrue(mixin in Feed.__bases__)
+
     def test_anonymous_user(self):
         response = self.client.get(reverse('dj_gram:feed'))
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('authentication:login_user') + '?next=/feed/')
+        self.assertEqual(response.status_code, 200)
 
     def test_model_is_Post(self):
         model = Feed.model
@@ -200,10 +226,16 @@ class TestVote(TestCase):
         self.user = CustomUser.objects.get(email='foo@foo.foo')
         self.post = Post.objects.get(user=self.user)
 
+    def test_mixins_is_present(self):
+        mixins = (views.LoginRequiredMixin,)
+        for mixin in mixins:
+            with self.subTest():
+                self.assertTrue(mixin in Voting.__bases__)
+
     def test_anonymous_user(self):
         response = self.client.get(reverse('dj_gram:vote', kwargs={'post_id': self.post.id, 'vote': 1}))
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('authentication:login_user') + f'?next=/post/{self.post.id}/vote/dj_gram_dev.env')
+        self.assertRedirects(response, reverse('authentication:login_user') + f'?next=/post/{self.post.id}/vote/1')
 
     def test_create_vote_like(self):
         self.client.force_login(self.user)
@@ -251,13 +283,19 @@ class TestVote(TestCase):
 
 
 class TestRegistration(TestCase):
+    def test_mixins_is_present(self):
+        mixins = (views.HeaderContextMixin,)
+        for mixin in mixins:
+            with self.subTest():
+                self.assertTrue(mixin in Registration.__bases__)
+
     def test_anonymous_user(self):
         response = self.client.get(reverse('dj_gram:registration'))
         self.assertEqual(response.status_code, 200)
 
     def test_template_name(self):
         template_name = Registration.template_name
-        self.assertEqual(template_name, 'dj_gram/register.html')
+        self.assertEqual(template_name, 'dj_gram/registration.html')
 
     def test_form_class(self):
         form_class = Registration.form_class
@@ -302,6 +340,12 @@ class TestRegistration(TestCase):
 
 
 class TestFillProfile(TestCase):
+    def test_mixins_is_present(self):
+        mixins = (views.HeaderContextMixin,)
+        for mixin in mixins:
+            with self.subTest():
+                self.assertTrue(mixin in FillProfile.__bases__)
+
     def test_anonymous_user(self):
         user = CustomUser.objects.create_user(email='foo@foo.foo')
         data = {
@@ -365,3 +409,48 @@ class TestFillProfile(TestCase):
         self.assertTrue(user.is_active)
         self.assertEqual(response.url, reverse('authentication:login_user'))
         self.assertEqual(user.first_name, data['first_name'])  # check if instance=user in get_form()
+
+
+class TestSubscribe(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        CustomUser.objects.create_user(email='foo@foo.foo', is_active=True)
+        CustomUser.objects.create_user(email='bar@bar.bar', is_active=True)
+
+    def setUp(self) -> None:
+        self.user_1 = CustomUser.objects.get(email='foo@foo.foo')
+        self.user_2 = CustomUser.objects.get(email='bar@bar.bar')
+
+    def test_mixins_is_present(self):
+        mixins = (views.LoginRequiredMixin,)
+        for mixin in mixins:
+            with self.subTest():
+                self.assertTrue(mixin in Subscribe.__bases__)
+
+    def test_subscribe(self):
+        self.client.force_login(user=self.user_1)
+        response = self.client.get(reverse('dj_gram:subscribe',
+                                           kwargs={'followed_user_id': self.user_2.id, 'action': 'subscribe'}),
+                                   HTTP_REFERER=reverse('dj_gram:feed'))
+
+        follow_inst = Follow.objects.get(user=self.user_1, followed_id=self.user_2)
+        self.assertTrue(follow_inst)
+
+        self.user_1 = CustomUser.objects.get(email='foo@foo.foo')
+        self.user_2 = CustomUser.objects.get(email='bar@bar.bar')
+        self.assertEqual(self.user_1.follow_count, 1)
+        self.assertEqual(self.user_2.followed_count, 1)
+
+    def test_unsubscribe(self):
+        self.client.force_login(user=self.user_1)
+        response = self.client.get(reverse('dj_gram:subscribe',
+                                           kwargs={'followed_user_id': self.user_2.id, 'action': 'unsubscribe'}),
+                                   HTTP_REFERER=reverse('dj_gram:feed'))
+
+        follow_inst = Follow.objects.filter(user=self.user_1, followed_id=self.user_2).first()
+        self.assertFalse(follow_inst)
+
+        self.user_1 = CustomUser.objects.get(email='foo@foo.foo')
+        self.user_2 = CustomUser.objects.get(email='bar@bar.bar')
+        self.assertEqual(self.user_1.follow_count, 0)
+        self.assertEqual(self.user_2.followed_count, 0)

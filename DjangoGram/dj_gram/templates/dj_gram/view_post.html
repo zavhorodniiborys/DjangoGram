@@ -1,24 +1,4 @@
-{% extends "./base.html" %}
-{% block title %} Post {{post.id}} {% endblock %}
+{% extends './base.html' %}
 {% block content %}
-{% if post %}
-    {% include './block_post_header.html' %}
-    {% for image in post.images.all %}
-        <img src="{{image.image.url}}" width="1280px" height="720px">
-        </br>
-    {% endfor %}
-
-    {% include './block_tags.html' %}
-    {% if post.user.id == request.user.id %}
-        <a href="{% url 'dj_gram:add_tag' post.id %}"><button>Add tag</button></a>
-    {% endif %}
-    {% include './block_like_dislike.html' %}
-
-    {% block add_tag %}
-    {% endblock %}
-    <a href="{% url 'dj_gram:delete_post' post.id %}"><button>Delete post</button></a>
-
-{% else %}
-NO POST
-{% endif %}
+  {% include './post.html' %}
 {% endblock %}

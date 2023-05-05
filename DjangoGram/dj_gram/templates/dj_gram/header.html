@@ -1,0 +1,15 @@
+<header class="fs-5 sticky-top border border-top-0 border-3 mb-1">
+  <nav class="navbar bg-secondary">
+    <div class="container-fluid">
+      {% for nav_elem in nav_elements %}
+        {% if nav_elem.title == selected_nav_elem %}
+          <a class="nav-link me-4 link-light fw-bold" href="{{nav_elem.url}}">{{nav_elem.title}}</a>
+        {% elif forloop.last %}
+          <a class="nav-link ms-auto" href="{{nav_elem.url}}">{{nav_elem.title}}</a>
+        {% else %}
+          <a class="nav-link me-4" href="{{nav_elem.url}}">{{nav_elem.title}}</a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </nav>
+</header>

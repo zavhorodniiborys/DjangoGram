@@ -1,30 +1,47 @@
-{% if messages %}
-  <ul class="messages">
-    {% for message in messages %}
-      <li class="{{ message.tags }}">{{ message }}</li>
+{% extends './base.html' %}
+{% block content %}
+<div class="profile border-bottom border-3">
+  <div class="profile-header row align-items-center">
+    <div class="col-12 col-sm-4 col-lg-2">
+      <img class="profile-image rounded" src="{{ profile.avatar.url }}">
+    </div>
+    <div class="profile-social-data col-12 col-sm-8 col-lg-10 row">
+      <div class='col col-lg-2'>Publications</br>{{pubs_count}}
+      </div>
+      <div class='col col-lg-2'>Subscribers</br>{{profile.followed_count}}
+      </div>
+      <div class='col col-lg-2'>Subscriptions</br>{{profile.follow_count}}
+      </div>
+    </div>
+  </div>
+  <div class="profile-data row">
+    <div class="profile-data-name">{{profile.first_name}} {{profile.last_name}}</div>
+    <div class="profile-data-bio">{{profile.bio}}</div>
+  </div>
+  <div class="profile-footer mb-2 d-grid">
+
+    {% if profile.id == request.user.id %}
+      <a href="{% url 'dj_gram:edit_profile' profile.id%}" class="btn btn-secondary mb-2">Edit profile</a>
+      <a href="{% url 'dj_gram:add_post' %}" class="btn btn-secondary">Add post</a>
+    {% else %}
+      {% include './block_message.html' %}
+      {% if not is_followed %}
+        <a href="{% url 'dj_gram:subscribe' profile.id 'subscribe' %}" class="btn btn-secondary">Subscribe</a>
+      {% else %}
+        <a href="{% url 'dj_gram:subscribe' profile.id 'unsubscribe' %}" class="btn btn-secondary">Unsubscribe</a>
+        {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<div class="profile-posts">
+  {% if posts %}
+    {% for post in posts %}
+      {% include 'dj_gram/post.html' %}
     {% endfor %}
-  </ul>
-{% endif %}
-
-{{profile.first_name}}
-</br>
-{{profile.last_name}}
-</br>
-{{profile.bio}}
-</br>
-Followed by: {{profile.followed_count}}
-</br>
-Follow: {{profile.follow_count}}
-</br>
-<img src="{{profile.avatar.url}}" width="120px" height="120px">
-{% if profile.id == request.user.id %}
-<a href="{% url 'dj_gram:edit_profile' profile.id%}"><button>Edit profile</button></a>
-{% endif %}
-
-{% if profile.id != request.user.id %}
-  {% if not is_followed %}
-  <a href="{% url 'dj_gram:subscribe' profile.id 'subscribe' %}"><button>Subscribe</button></a>
+    {% include './block_pagination.html' %}
   {% else %}
-  <a href="{% url 'dj_gram:subscribe' profile.id 'unsubscribe' %}"><button>Unsubscribe</button></a>
+    NO POSTS YET
   {% endif %}
-{% endif %}
+</div>
+{% endblock %}

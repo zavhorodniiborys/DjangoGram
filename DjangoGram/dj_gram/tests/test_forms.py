@@ -93,14 +93,6 @@ class TestCustomUserFillForm(TestCase):
 
         self.assertEqual(res, expected_res)
 
-    def test_password1_validation_is_present(self):
-        """Send to form obviously invalid password to tests validation"""
-        password1 = 'foo'
-        form = CustomUserFillForm(data={'password1': password1})
-        form.is_valid()
-
-        self.assertEqual(form.errors['password1'][0], 'This password is too short. It must contain at least 8 '
-                                                      'characters.')
 
     #  testing password2
     def test_custom_field_password2(self):
@@ -128,7 +120,7 @@ class TestCustomUserFillForm(TestCase):
         form = CustomUserFillForm(data={'password1': password1, 'password2': password2})
         form.is_valid()
 
-        self.assertEqual(form.errors['password2'][0], "Passwords don't match")
+        self.assertEqual(form.errors['password2'][0], "The two password fields didn’t match.")
 
     @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_save(self):
@@ -148,7 +140,6 @@ class TestCustomUserFillForm(TestCase):
             with self.subTest():
                 self.assertEqual(getattr(self.user, field), values[value])
 
-        self.assertEqual(self.user.avatar.url, '/media/images/avatars/IMAGE.jpg')
         self.assertTrue(self.user.check_password(password))
 
 
@@ -161,11 +152,6 @@ class TestMultipleTagsForm(TestCase):
     def setUp(self):
         self.post = Post.objects.first()
 
-    #  testing Meta
-    def test_model_is_Tag(self):
-        model = MultipleTagsForm._meta.model
-        self.assertEqual(model, Tag)
-
     def test_name_field(self):
         field = MultipleTagsForm().fields['name']
         widget = field.widget
@@ -177,11 +163,11 @@ class TestMultipleTagsForm(TestCase):
         self.assertEqual(max_length, 180)
         self.assertFalse(required)
 
-    def test_parse_multiple_tags(self):
+    def test_cleaned_multiple_tags(self):
         bad_tag = '#Very-b^d_t@:@g'
         form = MultipleTagsForm(data={'name': bad_tag})
         form.is_valid()
-        res = form.parse_tags(multiple=True)
+        res = form.cleaned_data['name']
 
         self.assertEqual(res, ['very'])
 
@@ -239,13 +225,13 @@ class TestTagForm(TestCase):
         form = TagForm(data={'name': '#tag'})
         form.is_valid()
         cleaned_data = form.clean()
-        self.assertEqual(cleaned_data, {'name': '#tag'})
+        self.assertEqual(cleaned_data, {'name': 'tag'})
 
-    def test_parse_name(self):
+    def test_cleaned_name(self):
         bad_tag = '#Very-b#^@d #tag'
         form = TagForm(data={'name': bad_tag})
         form.is_valid()
-        tag = form.parse_tags(multiple=False)
+        tag = form.cleaned_data['name']
         self.assertEqual(tag, 'very')
 
     #  testing save

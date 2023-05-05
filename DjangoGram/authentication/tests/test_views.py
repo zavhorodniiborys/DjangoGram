@@ -3,6 +3,7 @@ from django.test import TestCase
 
 from django.urls import reverse
 
+from authentication.forms import CustomAuthenticationForm
 from authentication.views import LoginUser
 import dj_gram.models as models
 
@@ -15,14 +16,14 @@ class TestLoginUser(TestCase):
 
     def test_form_class(self):
         form_class = LoginUser.form_class
-        self.assertEqual(form_class, AuthenticationForm)
+        self.assertEqual(form_class, CustomAuthenticationForm)
 
     def test_template_name(self):
         template_name = LoginUser.template_name
         self.assertEqual(template_name, 'authentication/login.html')
 
     def test_form_valid(self):
-        models.CustomUser.objects.create_user(email='foo@foo.foo', password='Super password', is_active=True)
+        user = models.CustomUser.objects.create_user(email='foo@foo.foo', password='Super password', is_active=True)
         data = {'username': 'foo@foo.foo', 'password': 'Super password'}
         response = self.client.get(reverse('authentication:login_user'))
         self.assertFalse(response.context['user'].is_authenticated)
@@ -31,7 +32,7 @@ class TestLoginUser(TestCase):
 
         self.assertTrue(response.context['user'].is_authenticated)
         self.assertEqual(response.status_code, 200)
-        self.assertRedirects(response, reverse('dj_gram:feed'))
+        self.assertRedirects(response, reverse('dj_gram:profile', kwargs={'pk': user.pk}))
 
 
 class TestLogoutUser(TestCase):

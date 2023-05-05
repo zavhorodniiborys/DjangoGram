@@ -1,4 +1,14 @@
-<form method="post" enctype="multipart/form-data">{% csrf_token %}
-    {{ form.as_p }}
-    <input type="submit" value="Save">
-</form>
+{% extends './base.html' %}
+{% block content %}
+
+
+<div class="form col-8">
+        <form method="post" enctype="multipart/form-data">
+      	  {% csrf_token %}
+          {{ form.as_div }}
+          <input class="btn btn-secondary mt-2" type="submit" value="Submit">
+        </form>
+      </div>
+
+{% endblock %}
+

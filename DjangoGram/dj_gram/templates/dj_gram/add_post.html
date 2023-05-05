@@ -1,5 +1,8 @@
+{% extends './base.html' %}
+{% block content %}
 <form method="post" enctype="multipart/form-data">{% csrf_token %}
     {{ multiple_tags_form.as_p }}
     {{ image_form.as_p  }}
     <input type="submit" value="Save">
 </form>
+{% endblock %}
