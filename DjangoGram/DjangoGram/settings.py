@@ -17,7 +17,7 @@ from django.contrib import messages
 
 # Initialise environment variables
 env = environ.Env()
-env.read_env('env/dj_gram.env')
+env.read_env('env/dj_gram_dev.env')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,8 +30,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DEBUG')
-
+DEBUG = env.bool('DEBUG', False)
 ALLOWED_HOSTS = ['*']
 
 
@@ -81,6 +80,12 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'DjangoGram.wsgi.application'
+
+CSRF_TRUSTED_ORIGINS = ('http://0.0.0.0:1337', 'http://35.208.242.20:1337')
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
 
 DATABASES = {
     'default': {
@@ -143,7 +148,7 @@ MESSAGE_TAGS = {
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = '/var/www/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
