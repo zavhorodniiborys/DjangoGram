@@ -4,7 +4,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile, TemporaryUploaded
 from django.test import TestCase, override_settings
 
 from ..models import *
-from .conf import TEST_DIR, create_test_image
+from .conf import TEST_DIR, create_test_image, delete_cloudinary_images
 
 
 class TestCustomUserModel(TestCase):
@@ -25,7 +25,9 @@ class TestCustomUserModel(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        shutil.rmtree(TEST_DIR, ignore_errors=True)
+        users = CustomUser.objects.all()
+        images = Images.objects.all()
+        delete_cloudinary_images(users=users, images=images)
         super().tearDownClass()
 
     #  testing settings
@@ -85,7 +87,7 @@ class TestCustomUserModel(TestCase):
     #  testing avatar
     def test_customuser_avatar(self):
         avatar_url = self.user.avatar.url
-        self.assertTrue('/images/avatars/IMAGE' in avatar_url)
+        self.assertTrue(f'/images/avatars/{self.user.pk}_{self.user.first_name}_{self.user.last_name}' in avatar_url)
 
     #  testing user creation
     def test_customuser_create_user_default_kwargs(self):
@@ -138,7 +140,6 @@ class TestImages(TestCase):
     def setUpTestData(cls):
         user = CustomUser.objects.create_user(email='tests@tests.tests')
         post = Post.objects.create(user=user)
-
         Images.objects.create(post=post, image=create_test_image(size=(100, 100)))
 
     def setUp(self):
@@ -148,7 +149,9 @@ class TestImages(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        shutil.rmtree(TEST_DIR, ignore_errors=True)
+        users = CustomUser.objects.all()
+        images = Images.objects.all()
+        delete_cloudinary_images(users=users, images=images)
         super().tearDownClass()
 
     def test_image_path(self):
@@ -164,7 +167,6 @@ class TestImages(TestCase):
         self.assertEqual(image_verbose_name_plural, 'images')
 
     #  testing save
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_image_create_thumbnail(self):
         really_big_image = create_test_image((2000, 1500))
         image = Images.objects.create(post=self.post, image=really_big_image).image
@@ -302,10 +304,6 @@ class TestPost(TestCase):
 
 
 class TestFollow(TestCase):
-    # def setUpTestData(cls):
-    #     user_1 = CustomUser.objects.create_user(email='foo@foo.foo')
-    #     user_2 = CustomUser.objects.create_user(email='bar@bar.bar')
-
     def test_user(self):
         user_field = Follow._meta.get_field('user')
         self.assertIsInstance(user_field, models.ForeignKey)

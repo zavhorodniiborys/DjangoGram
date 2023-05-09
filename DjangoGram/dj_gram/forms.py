@@ -1,9 +1,8 @@
 import re
 
 from django import forms
-from django.contrib.auth import password_validation
 from django.contrib.auth.forms import UserChangeForm, UserCreationForm
-from django.forms import ModelForm, ClearableFileInput, PasswordInput, CharField, Textarea, EmailField, EmailInput
+from django.forms import ModelForm, ClearableFileInput, CharField, Textarea, EmailInput
 
 from .models import *
 
@@ -31,7 +30,7 @@ class TagFormMixin:
             else:
                 tags = re.search(r'#(\w{2,})\b', tags)
                 if tags:
-                    tags = ''.join(tags.group(1))  # group(dj_gram_dev.env) because re.search includes "#"
+                    tags = ''.join(tags.group(1))  # group(1) because re.search includes "#"
 
             if not tags:
                 self.add_error('name', 'Wrong tag format. Tags must start with "#" and contain at least 2 characters.')

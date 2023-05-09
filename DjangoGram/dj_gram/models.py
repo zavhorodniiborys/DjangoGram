@@ -64,12 +64,16 @@ class CustomUserManager(BaseUserManager):
 
 
 class CustomUser(ImageThumbnailMixin, AbstractUser):
+    def avatar_public_id(self):
+        return '_'.join([str(self.pk), self.first_name, self.last_name])
+
     username = None
     first_name = models.CharField(max_length=32)
     last_name = models.CharField(max_length=32)
     email = models.EmailField(verbose_name='email address', unique=True, max_length=255)
     bio = models.TextField(max_length=512)
-    avatar = CloudinaryField('image', folder=os.path.join('images', 'avatars'), use_filename=True)
+    avatar = CloudinaryField('image', folder=os.path.join('images', 'avatars'), use_filename=True,
+                             public_id=avatar_public_id)
     follow_count = models.IntegerField(default=0)
     followed_count = models.IntegerField(default=0)
 
@@ -154,7 +158,6 @@ class Tag(models.Model):
 def validate_count_tags_in_post(sender, action, **kwargs):
     if action == 'pre_add':
         instance = kwargs['instance']
-        # print(kwargs['pk_set'])
         pk = list(kwargs['pk_set'])[0]
 
         if isinstance(instance, Post):
@@ -164,11 +167,6 @@ def validate_count_tags_in_post(sender, action, **kwargs):
 
         if tags_count >= Post.max_tags_count:
             raise ValidationError(f'Post can\'t have more than {Post.max_tags_count} tags')
-
-
-@receiver(pre_delete, sender=CustomUser)
-def delete_image_in_cloud(sender, instance, **kwargs):
-    cloudinary.uploader.destroy(instance.avatar.public_id, invalidate=True)
 
 
 @receiver(pre_delete, sender=Images)

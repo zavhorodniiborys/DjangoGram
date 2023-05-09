@@ -1,8 +1,9 @@
+from django.forms import PasswordInput
 from django.test import TestCase, override_settings
 from django.utils.datastructures import MultiValueDict
 
 from dj_gram.forms import *
-from .conf import TEST_DIR, create_test_image
+from .conf import TEST_DIR, create_test_image, delete_cloudinary_images
 
 
 class TestImageForm(TestCase):
@@ -68,6 +69,13 @@ class TestCustomUserFillForm(TestCase):
     def setUp(self) -> None:
         self.user = CustomUser.objects.get(email='foo@foo.foo')
 
+    @classmethod
+    def tearDownClass(cls):
+        users = CustomUser.objects.all()
+        images = Images.objects.all()
+        delete_cloudinary_images(users=users, images=images)
+        super().tearDownClass()
+
     def test_model_is_CustomUserModel(self):
         model = CustomUserFillForm._meta.model
         self.assertEqual(model, CustomUser)
@@ -92,7 +100,6 @@ class TestCustomUserFillForm(TestCase):
         res = form.cleaned_data['password1']
 
         self.assertEqual(res, expected_res)
-
 
     #  testing password2
     def test_custom_field_password2(self):

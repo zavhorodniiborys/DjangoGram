@@ -119,13 +119,8 @@ class AddPost(HeaderContextMixin, LoginRequiredMixin, FormView):
 
 class DeletePost(LoginRequiredMixin, DeleteView):
     model = Post
+    template_name = 'dj_gram/post_confirm_delete.html'
     success_url = reverse_lazy('dj_gram:feed')
-
-    def get(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        context = self.get_context_data(object=self.object)
-        context['previous_page'] = request.META.get('HTTP_REFERER', '/')
-        return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
         # Set self.object before the usual form processing flow.

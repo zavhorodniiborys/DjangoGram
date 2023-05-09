@@ -13,7 +13,7 @@ from django.utils.http import urlsafe_base64_encode
 
 from dj_gram.forms import TagForm, CustomUserCreationForm, CustomUserFillForm
 from dj_gram.models import *
-from .conf import create_test_image, TEST_DIR
+from .conf import create_test_image, TEST_DIR, delete_cloudinary_images
 from dj_gram.tokens import account_activation_token
 from dj_gram.views import AddTag, Feed, Registration, FillProfile, ViewPost, Voting, Subscribe
 
@@ -36,7 +36,8 @@ class TestViewPost(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        shutil.rmtree(TEST_DIR, ignore_errors=True)
+        images = Images.objects.all()
+        delete_cloudinary_images(images=images)
         super().tearDownClass()
 
     def test_view_post(self):
@@ -73,6 +74,13 @@ class TestAddTag(TestCase):
     def setUp(self):
         self.user = CustomUser.objects.get(email='foo@foo.foo')
         self.post = Post.objects.first()
+
+    @classmethod
+    def tearDownClass(cls):
+        users = CustomUser.objects.all()
+        images = Images.objects.all()
+        delete_cloudinary_images(users=users, images=images)
+        super().tearDownClass()
 
     def test_mixins_is_present(self):
         mixins = (views.LoginRequiredMixin,)
@@ -139,6 +147,13 @@ class TestAddPost(TestCase):
 
     def setUp(self):
         self.user = CustomUser.objects.get(email='foo@foo.foo')
+
+    @classmethod
+    def tearDownClass(cls):
+        users = CustomUser.objects.all()
+        images = Images.objects.all()
+        delete_cloudinary_images(users=users, images=images)
+        super().tearDownClass()
 
     def test_mixins_is_present(self):
         mixins = (views.HeaderContextMixin, views.LoginRequiredMixin)
@@ -340,6 +355,13 @@ class TestRegistration(TestCase):
 
 
 class TestFillProfile(TestCase):
+    @classmethod
+    def tearDownClass(cls):
+        users = CustomUser.objects.all()
+        images = Images.objects.all()
+        delete_cloudinary_images(users=users, images=images)
+        super().tearDownClass()
+
     def test_mixins_is_present(self):
         mixins = (views.HeaderContextMixin,)
         for mixin in mixins:
