@@ -1,11 +1,10 @@
-import shutil
 from unittest.mock import patch
 
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import mail
 from django.core.exceptions import ObjectDoesNotExist
 from django.template.loader import render_to_string
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.html import strip_tags
@@ -13,17 +12,14 @@ from django.utils.http import urlsafe_base64_encode
 
 from dj_gram.forms import TagForm, CustomUserCreationForm, CustomUserFillForm
 from dj_gram.models import *
-from .conf import create_test_image, TEST_DIR, delete_cloudinary_images
+from .conf import create_test_image
 from dj_gram.tokens import account_activation_token
-from dj_gram.views import AddTag, Feed, Registration, FillProfile, ViewPost, Voting, Subscribe
-
-from .. import views
-from ..views import AddPost, Vote
+from dj_gram.views import AddTag, Feed, Registration, FillProfile, ViewPost, Voting, Subscribe, AddPost,\
+    LoginRequiredMixin, PostContextMixin, HeaderContextMixin
 
 
 class TestViewPost(TestCase):
     @classmethod
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def setUpTestData(cls):
         user = CustomUser.objects.create_user(email='foo@foo.foo', password='Super password',
                                               first_name='John', last_name='Doe', is_active=True)
@@ -33,12 +29,6 @@ class TestViewPost(TestCase):
     def setUp(self):
         self.user = CustomUser.objects.get(email='foo@foo.foo')
         self.post = Post.objects.get(user=self.user)
-
-    @classmethod
-    def tearDownClass(cls):
-        images = Images.objects.all()
-        delete_cloudinary_images(images=images)
-        super().tearDownClass()
 
     def test_view_post(self):
         #  testing access by anonymous user
@@ -56,7 +46,7 @@ class TestViewPost(TestCase):
         self.assertEqual(response.context['post'].id, self.post.id)
 
     def test_mixins_is_present(self):
-        mixins = (views.HeaderContextMixin, views.PostContextMixin, views.LoginRequiredMixin)
+        mixins = (HeaderContextMixin, PostContextMixin, LoginRequiredMixin)
         for mixin in mixins:
             with self.subTest():
                 self.assertTrue(mixin in ViewPost.__bases__)
@@ -64,7 +54,6 @@ class TestViewPost(TestCase):
 
 class TestAddTag(TestCase):
     @classmethod
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def setUpTestData(cls):
         user = CustomUser.objects.create_user(email='foo@foo.foo', password='Super password',
                                               first_name='John', last_name='Doe', is_active=True)
@@ -75,15 +64,8 @@ class TestAddTag(TestCase):
         self.user = CustomUser.objects.get(email='foo@foo.foo')
         self.post = Post.objects.first()
 
-    @classmethod
-    def tearDownClass(cls):
-        users = CustomUser.objects.all()
-        images = Images.objects.all()
-        delete_cloudinary_images(users=users, images=images)
-        super().tearDownClass()
-
     def test_mixins_is_present(self):
-        mixins = (views.LoginRequiredMixin,)
+        mixins = (LoginRequiredMixin,)
         for mixin in mixins:
             with self.subTest(mixin=mixin):
                 self.assertTrue(mixin in AddTag.__bases__)
@@ -140,7 +122,6 @@ class TestAddTag(TestCase):
 
 class TestAddPost(TestCase):
     @classmethod
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def setUpTestData(cls):
         user = CustomUser.objects.create_user(email='foo@foo.foo', password='Super password',
                                               first_name='John', last_name='Doe', is_active=True)
@@ -148,15 +129,8 @@ class TestAddPost(TestCase):
     def setUp(self):
         self.user = CustomUser.objects.get(email='foo@foo.foo')
 
-    @classmethod
-    def tearDownClass(cls):
-        users = CustomUser.objects.all()
-        images = Images.objects.all()
-        delete_cloudinary_images(users=users, images=images)
-        super().tearDownClass()
-
     def test_mixins_is_present(self):
-        mixins = (views.HeaderContextMixin, views.LoginRequiredMixin)
+        mixins = (HeaderContextMixin, LoginRequiredMixin)
         for mixin in mixins:
             with self.subTest():
                 self.assertTrue(mixin in AddPost.__bases__)
@@ -203,7 +177,7 @@ class TestAddPost(TestCase):
 
 class TestFeed(TestCase):
     def test_mixins_is_present(self):
-        mixins = (views.HeaderContextMixin, views.PostContextMixin)
+        mixins = (HeaderContextMixin, PostContextMixin)
         for mixin in mixins:
             with self.subTest():
                 self.assertTrue(mixin in Feed.__bases__)
@@ -231,7 +205,6 @@ class TestFeed(TestCase):
 
 class TestVote(TestCase):
     @classmethod
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def setUpTestData(cls):
         user = CustomUser.objects.create_user(email='foo@foo.foo', password='Super password',
                                               first_name='John', last_name='Doe', is_active=True)
@@ -242,7 +215,7 @@ class TestVote(TestCase):
         self.post = Post.objects.get(user=self.user)
 
     def test_mixins_is_present(self):
-        mixins = (views.LoginRequiredMixin,)
+        mixins = (LoginRequiredMixin,)
         for mixin in mixins:
             with self.subTest():
                 self.assertTrue(mixin in Voting.__bases__)
@@ -299,7 +272,7 @@ class TestVote(TestCase):
 
 class TestRegistration(TestCase):
     def test_mixins_is_present(self):
-        mixins = (views.HeaderContextMixin,)
+        mixins = (HeaderContextMixin,)
         for mixin in mixins:
             with self.subTest():
                 self.assertTrue(mixin in Registration.__bases__)
@@ -355,15 +328,8 @@ class TestRegistration(TestCase):
 
 
 class TestFillProfile(TestCase):
-    @classmethod
-    def tearDownClass(cls):
-        users = CustomUser.objects.all()
-        images = Images.objects.all()
-        delete_cloudinary_images(users=users, images=images)
-        super().tearDownClass()
-
     def test_mixins_is_present(self):
-        mixins = (views.HeaderContextMixin,)
+        mixins = (HeaderContextMixin,)
         for mixin in mixins:
             with self.subTest():
                 self.assertTrue(mixin in FillProfile.__bases__)
@@ -444,7 +410,7 @@ class TestSubscribe(TestCase):
         self.user_2 = CustomUser.objects.get(email='bar@bar.bar')
 
     def test_mixins_is_present(self):
-        mixins = (views.LoginRequiredMixin,)
+        mixins = (LoginRequiredMixin,)
         for mixin in mixins:
             with self.subTest():
                 self.assertTrue(mixin in Subscribe.__bases__)

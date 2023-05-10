@@ -12,6 +12,8 @@ from django.db import models
 from django.db.models.signals import m2m_changed, pre_delete
 from django.dispatch import receiver
 
+from DjangoGram import settings
+
 
 class ImageThumbnailMixin:
     @staticmethod
@@ -67,12 +69,18 @@ class CustomUser(ImageThumbnailMixin, AbstractUser):
     def avatar_public_id(self):
         return '_'.join([str(self.pk), self.first_name, self.last_name])
 
+    def get_avatar_folder(self):
+        if settings.DEBUG:
+            return os.path.join('images', 'tests')
+        else:
+            return os.path.join('images', 'avatars')
+
     username = None
     first_name = models.CharField(max_length=32)
     last_name = models.CharField(max_length=32)
     email = models.EmailField(verbose_name='email address', unique=True, max_length=255)
     bio = models.TextField(max_length=512)
-    avatar = CloudinaryField('image', folder=os.path.join('images', 'avatars'), use_filename=True,
+    avatar = CloudinaryField('image', folder=get_avatar_folder, use_filename=True,
                              public_id=avatar_public_id)
     follow_count = models.IntegerField(default=0)
     followed_count = models.IntegerField(default=0)
@@ -127,8 +135,14 @@ class Vote(models.Model):
 
 
 class Images(ImageThumbnailMixin, models.Model):
+    def get_image_folder(self):
+        if settings.DEBUG:
+            return os.path.join('images', 'tests')
+        else:
+            return os.path.join('images', 'posts')
+
     post = models.ForeignKey(Post, related_name='images', on_delete=models.CASCADE)
-    image = CloudinaryField('image', folder=os.path.join('images', 'posts'), use_filename=True)
+    image = CloudinaryField('image', folder=get_image_folder, use_filename=True)
     max_count_images_in_post = 10
 
     class Meta:

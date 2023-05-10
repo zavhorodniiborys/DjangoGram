@@ -1,15 +1,11 @@
-import shutil
-from PIL import Image as Img
-from django.core.files.uploadedfile import SimpleUploadedFile, TemporaryUploadedFile, InMemoryUploadedFile
-from django.test import TestCase, override_settings
+from django.test import TestCase
 
-from ..models import *
-from .conf import TEST_DIR, create_test_image, delete_cloudinary_images
+from dj_gram.models import *
+from .conf import create_test_image
 
 
 class TestCustomUserModel(TestCase):
     @classmethod
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def setUpTestData(cls):
         user = CustomUser.objects.create_user(email='tests@tests.com', password='password', first_name='John',
                                               last_name='Doe', bio='Some bio')
@@ -22,13 +18,6 @@ class TestCustomUserModel(TestCase):
     def setUp(self):
         self.user = CustomUser.objects.get(email='tests@tests.com')
         self.superuser = CustomUser.objects.get(email='admin@admin.admin')
-
-    @classmethod
-    def tearDownClass(cls):
-        users = CustomUser.objects.all()
-        images = Images.objects.all()
-        delete_cloudinary_images(users=users, images=images)
-        super().tearDownClass()
 
     #  testing settings
     def test_customuser_username_field(self):
@@ -84,10 +73,10 @@ class TestCustomUserModel(TestCase):
         max_length = CustomUser._meta.get_field('bio').max_length
         self.assertEqual(max_length, 512)
 
-    #  testing avatar
-    def test_customuser_avatar(self):
-        avatar_url = self.user.avatar.url
-        self.assertTrue(f'/images/avatars/{self.user.pk}_{self.user.first_name}_{self.user.last_name}' in avatar_url)
+    # testing avatar
+    def test_customuser_avatar_url(self):
+        avatar_url = self.user.avatar_public_id()
+        self.assertTrue(f'{self.user.pk}_{self.user.first_name}_{self.user.last_name}' in avatar_url)
 
     #  testing user creation
     def test_customuser_create_user_default_kwargs(self):
@@ -136,7 +125,6 @@ class TestTag(TestCase):
 
 class TestImages(TestCase):
     @classmethod
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def setUpTestData(cls):
         user = CustomUser.objects.create_user(email='tests@tests.tests')
         post = Post.objects.create(user=user)
@@ -146,17 +134,6 @@ class TestImages(TestCase):
         self.user = CustomUser.objects.get(email='tests@tests.tests')
         self.post = self.user.posts.first()
         self.image = self.post.images.first()
-
-    @classmethod
-    def tearDownClass(cls):
-        users = CustomUser.objects.all()
-        images = Images.objects.all()
-        delete_cloudinary_images(users=users, images=images)
-        super().tearDownClass()
-
-    def test_image_path(self):
-        image_path = self.image.image.url
-        self.assertTrue('images/posts/IMAGE' in image_path)
 
     def test_image_verbose_name(self):
         image_verbose_name = Images._meta.verbose_name

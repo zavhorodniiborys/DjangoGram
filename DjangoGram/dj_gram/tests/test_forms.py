@@ -1,9 +1,9 @@
 from django.forms import PasswordInput
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.utils.datastructures import MultiValueDict
 
 from dj_gram.forms import *
-from .conf import TEST_DIR, create_test_image, delete_cloudinary_images
+from .conf import create_test_image
 
 
 class TestImageForm(TestCase):
@@ -21,7 +21,6 @@ class TestImageForm(TestCase):
         required = form.fields['image'].required
         self.assertTrue(required)
 
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_valid_form(self):
         image = create_test_image()
         files = MultiValueDict({'image': [image.open()]})
@@ -69,13 +68,6 @@ class TestCustomUserFillForm(TestCase):
     def setUp(self) -> None:
         self.user = CustomUser.objects.get(email='foo@foo.foo')
 
-    @classmethod
-    def tearDownClass(cls):
-        users = CustomUser.objects.all()
-        images = Images.objects.all()
-        delete_cloudinary_images(users=users, images=images)
-        super().tearDownClass()
-
     def test_model_is_CustomUserModel(self):
         model = CustomUserFillForm._meta.model
         self.assertEqual(model, CustomUser)
@@ -120,7 +112,6 @@ class TestCustomUserFillForm(TestCase):
         cleaned_res = form.cleaned_data['password2']
         self.assertEqual(cleaned_res, password)
 
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_password2_validation_is_present(self):
         password1 = 'VERY strong PASSWORD'
         password2 = 'mismatched_pass'
@@ -129,7 +120,6 @@ class TestCustomUserFillForm(TestCase):
 
         self.assertEqual(form.errors['password2'][0], "The two password fields didn’t match.")
 
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_save(self):
         avatar = create_test_image()
         password = 'VERY strong PASSWORD'

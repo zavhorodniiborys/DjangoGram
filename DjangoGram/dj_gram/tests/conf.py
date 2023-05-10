@@ -5,9 +5,6 @@ import cloudinary
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
 
-TEST_DIR = 'dj_gram/tests/test_data'
-
-
 def create_test_image(size=(100, 100)):
     image = Image.new('RGB', size=size)
     temp = BytesIO()
