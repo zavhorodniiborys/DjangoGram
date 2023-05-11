@@ -1,8 +1,9 @@
-from django.test import TestCase, override_settings
+from django.forms import PasswordInput
+from django.test import TestCase
 from django.utils.datastructures import MultiValueDict
 
 from dj_gram.forms import *
-from .conf import TEST_DIR, create_test_image
+from .conf import create_test_image
 
 
 class TestImageForm(TestCase):
@@ -20,7 +21,6 @@ class TestImageForm(TestCase):
         required = form.fields['image'].required
         self.assertTrue(required)
 
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_valid_form(self):
         image = create_test_image()
         files = MultiValueDict({'image': [image.open()]})
@@ -93,15 +93,6 @@ class TestCustomUserFillForm(TestCase):
 
         self.assertEqual(res, expected_res)
 
-    def test_password1_validation_is_present(self):
-        """Send to form obviously invalid password to tests validation"""
-        password1 = 'foo'
-        form = CustomUserFillForm(data={'password1': password1})
-        form.is_valid()
-
-        self.assertEqual(form.errors['password1'][0], 'This password is too short. It must contain at least 8 '
-                                                      'characters.')
-
     #  testing password2
     def test_custom_field_password2(self):
         password1 = CustomUserFillForm().fields['password2']
@@ -121,16 +112,14 @@ class TestCustomUserFillForm(TestCase):
         cleaned_res = form.cleaned_data['password2']
         self.assertEqual(cleaned_res, password)
 
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_password2_validation_is_present(self):
         password1 = 'VERY strong PASSWORD'
         password2 = 'mismatched_pass'
         form = CustomUserFillForm(data={'password1': password1, 'password2': password2})
         form.is_valid()
 
-        self.assertEqual(form.errors['password2'][0], "Passwords don't match")
+        self.assertEqual(form.errors['password2'][0], "The two password fields didn’t match.")
 
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_save(self):
         avatar = create_test_image()
         password = 'VERY strong PASSWORD'
@@ -148,7 +137,6 @@ class TestCustomUserFillForm(TestCase):
             with self.subTest():
                 self.assertEqual(getattr(self.user, field), values[value])
 
-        self.assertEqual(self.user.avatar.url, '/media/images/avatars/IMAGE.jpg')
         self.assertTrue(self.user.check_password(password))
 
 
@@ -161,11 +149,6 @@ class TestMultipleTagsForm(TestCase):
     def setUp(self):
         self.post = Post.objects.first()
 
-    #  testing Meta
-    def test_model_is_Tag(self):
-        model = MultipleTagsForm._meta.model
-        self.assertEqual(model, Tag)
-
     def test_name_field(self):
         field = MultipleTagsForm().fields['name']
         widget = field.widget
@@ -177,11 +160,11 @@ class TestMultipleTagsForm(TestCase):
         self.assertEqual(max_length, 180)
         self.assertFalse(required)
 
-    def test_parse_multiple_tags(self):
+    def test_cleaned_multiple_tags(self):
         bad_tag = '#Very-b^d_t@:@g'
         form = MultipleTagsForm(data={'name': bad_tag})
         form.is_valid()
-        res = form.parse_tags(multiple=True)
+        res = form.cleaned_data['name']
 
         self.assertEqual(res, ['very'])
 
@@ -239,13 +222,13 @@ class TestTagForm(TestCase):
         form = TagForm(data={'name': '#tag'})
         form.is_valid()
         cleaned_data = form.clean()
-        self.assertEqual(cleaned_data, {'name': '#tag'})
+        self.assertEqual(cleaned_data, {'name': 'tag'})
 
-    def test_parse_name(self):
+    def test_cleaned_name(self):
         bad_tag = '#Very-b#^@d #tag'
         form = TagForm(data={'name': bad_tag})
         form.is_valid()
-        tag = form.parse_tags(multiple=False)
+        tag = form.cleaned_data['name']
         self.assertEqual(tag, 'very')
 
     #  testing save

@@ -1,39 +1,12 @@
 {% extends './base.html' %}
 {% block title %} Feed {% endblock %}
+
 {% block content %}
-{% for post in posts %}
-<div class="post" style="width: 300px; height: 300px; margin: auto; background-color: yellow;">
+  {% for post in posts %}
+    {% include 'dj_gram/post.html' %}
+  {% endfor %}
+{% endblock %}
 
-    {% include './block_post_header.html' %}
-    <div class="post-image"><img src="{{post.images.first.image.url}}" width="300px" height="200px"></div>
-    <div class="post-footer">
-
-        {% include './block_tags.html' %}
-
-
-
-        <a href="{% url 'dj_gram:view_post' post.id %}"><button>SEE POST</button></a>
-        {% include './block_like_dislike.html' %}
-
-    </div>
-</div>
-
-{% endfor %}
-<div class="pagination" style="margin: auto; background-color: white">
-    <span class="step-links">
-        {% if page_obj.has_previous %}
-            <a href="?page=1">&laquo; first</a>
-            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
-        {% endif %}
-
-        <span class="current" style="align: center;">
-            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
-        </span>
-
-        {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}">next</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
-        {% endif %}
-    </span>
-</div>
+{% block footer %}
+  {% include './block_pagination.html' %}
 {% endblock %}

@@ -1,0 +1,43 @@
+<div class='post-image'>
+  <div id="ImageCarousel-{{forloop.counter}}" class="carousel slide bg-secondary">
+    {% if post.images.all|length > 1 %}
+      <div class="carousel-indicators">
+        {% for i in post.images.all %}
+          {% if forloop.first %}
+            <button type="button" data-bs-target="#ImageCarousel-{{forloop.parentloop.counter}}" class="active" data-bs-slide-to="0"></button>
+          {% else %}
+            <button type="button" data-bs-target="#ImageCarousel-{{forloop.parentloop.counter}}" data-bs-slide-to="{{forloop.counter0}}"></button>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      <button class="carousel-control-prev" type="button" data-bs-target="#ImageCarousel-{{forloop.counter}}" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+      </button>
+
+      <button class="carousel-control-next" type="button" data-bs-target="#ImageCarousel-{{forloop.counter}}" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+      </button>
+    {% endif %}
+    
+    <div class="carousel-inner" style="height:500px; background-size:cover; background-position: center;">
+      {% for image in post.images.all %}
+        {% if forloop.first %}
+          <div class="carousel-item active" style="height:500px; text-align: center;">
+            <img class="mx-auto d-block h-500" src="{{image.image.url}}">
+          </div>
+        {% else %}
+          <div class="carousel-item" style="height:500px; text-align: center;">
+            <img class="mx-auto d-block mh-100" src="{{image.image.url}}">
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+
+
+
+  </div>
+</div>

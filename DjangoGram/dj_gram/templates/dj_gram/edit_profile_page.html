@@ -1,0 +1,20 @@
+{% extends './base.html' %}
+{% block content %}
+
+
+<div class="form col-8">
+        <form method="post" enctype="multipart/form-data">
+      	  {% csrf_token %}
+          <img class="profile-image-edit" src="{{ form.instance.avatar.url }}">
+          {{ form.avatar }}
+          {{ form.first_name.label }}<br>
+          {{ form.first_name }}<br>
+          {{ form.last_name.label }}<br>
+          {{ form.last_name }}<br>
+          {{ form.bio.label }}<br>
+          {{ form.bio }}<br>
+          <input class="btn btn-secondary" type="submit" value="Submit">
+        </form>
+      </div>
+
+{% endblock %}

@@ -1,10 +1,8 @@
 from io import BytesIO
 
 from PIL import Image
+import cloudinary
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.test import override_settings
-
-TEST_DIR = 'dj_gram/tests/test_data'
 
 
 def create_test_image(size=(100, 100)):
@@ -17,3 +15,15 @@ def create_test_image(size=(100, 100)):
                                       content_type='image/jpeg',
                                       size=image.size, charset=None)
     return temp_image
+
+
+def delete_cloudinary_images(users=None, images=None):
+    if users:
+        for user in users:
+            if user.avatar.public_id:
+                cloudinary.uploader.destroy(user.avatar.public_id, invalidate=True)
+
+    if images:
+        for image in images:
+            if image.image.public_id:
+                cloudinary.uploader.destroy(image.image.public_id, invalidate=True)

@@ -1,10 +1,12 @@
-<div class="post-header">
-    <div>
-        {% if post.user.avatar %}
-        <img src="{{post.user.avatar.url}}" width="30px" height="30px">
-        {% endif %}
-        {{post.user.first_name}}
-        {{post.user.last_name}}
-        {{post.date}}
-    </div>
+<div class='post-header'>
+  <ul>
+    <a href="{% url 'dj_gram:profile' post.user.pk %}" class="text-decoration-none text-reset">
+    <li class='post-header-li'>
+      <img src='{{post.user.avatar.url}}'>
+    </li>
+    <li class='post-header-li pt-2'>{{post.user.first_name}}</li>
+    <li class='post-header-li pt-2'>{{post.user.last_name}}</li>
+    </a>
+    <li class='post-header-li-last pt-2'>{{post.date}}</li>
+  </ul>
 </div>

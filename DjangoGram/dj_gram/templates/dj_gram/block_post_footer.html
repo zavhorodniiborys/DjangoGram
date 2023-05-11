@@ -1,0 +1,81 @@
+{% load post_votes %}
+
+<div class='post-footer p-2'>
+  {% if post.tags %}
+  <div class='post-footer-tags'>
+    <ul>
+      {% for tag in post.tags.all %}
+        <li>#{{tag.name}}</li>
+      {% endfor %}
+    </ul>
+    <div class="collapse" id="collapseAddTag{{ post.pk }}">
+      <div class="card card-body">
+
+        <form action="{% url 'dj_gram:add_tag' post.pk %}" method="post">
+          {% csrf_token %}
+          {{ add_tag_form.name }}
+          <input type="submit" class="btn btn-primary" value="Save">
+        </form>
+
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class='post-footer-buttons'>
+    <a href="{% url 'dj_gram:view_post' post.pk%}"><button class="btn btn-secondary py-0">View post</button></a>
+
+    {% if post.pk in votes.keys %}
+      {% if votes|get_vote:post.pk %}
+        <a href="{% url 'dj_gram:vote' post.pk 1 %}"><button class="btn btn-success py-0">Like</button></a> {{post.get_likes}}
+        <a href="{% url 'dj_gram:vote' post.pk 0 %}"><button class="btn btn-outline-danger py-0">Dislike</button></a> {{post.get_dislikes}}
+      {% else %}
+        <a href="{% url 'dj_gram:vote' post.pk 1 %}"><button class="btn btn-outline-success py-0">Like</button></a> {{post.get_likes}}
+        <a href="{% url 'dj_gram:vote' post.pk 0 %}"><button class="btn btn-danger py-0">Dislike</button></a> {{post.get_dislikes}}
+      {% endif %}
+    {% else %}
+      <a href="{% url 'dj_gram:vote' post.pk 1 %}"><button class="btn btn-outline-success py-0">Like</button></a> {{post.get_likes}}
+      <a href="{% url 'dj_gram:vote' post.pk 0 %}"><button class="btn btn-outline-danger py-0">Dislike</button></a> {{post.get_dislikes}}
+    {% endif %}
+
+    {% if post.user.id == request.user.id %}
+        <button class="btn btn-outline-danger py-0 float-end" data-bs-toggle="modal" data-bs-target="#DeleteModal{{post.pk}}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/>
+          </svg>
+          Delete post
+        </button>
+
+        <button class="btn btn-secondary py-0 float-end" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAddTag{{ post.pk }}" aria-expanded="false" aria-controls="collapseAddTag{{ post.pk }}">
+        Add tag
+        </button>
+
+    <!-- Modals -->
+      <div class="modal fade" id="DeleteModal{{post.pk}}" tabindex="-1" aria-labelledby="DeleteModalLabel{{post.pk}}" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h1 class="modal-title fs-5" id="DeleteModalLabel{{post.pk}}">Delete post</h1>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              Are you sure you want to delete the post?
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <form action="{% url 'dj_gram:delete_post' post.pk %}" method="post">
+                {% csrf_token %}
+                  <input type="submit" class="btn btn-primary" value="Delete post">
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+    <!-- End Modals -->
+    {% endif %}
+
+  </div>
+</div>

@@ -1,0 +1,36 @@
+services:
+  dj_gram_db:
+    image: postgres:14.7
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    ports:
+        - "5432"
+    env_file:
+      - env/dj_gram_db.env
+
+  web:
+    image: boryszavhorodnii/dj_gram.prod
+#    build:
+#      dockerfile: Dockerfile.prod
+    volumes:
+      - static_volume:/DjangoGram/static
+    entrypoint: ['/DjangoGram/docker-entrypoint.prod.sh']
+    env_file:
+      - env/dj_gram.env
+    expose:
+      - "8000"
+    depends_on:
+      - dj_gram_db
+
+  nginx:
+    build: ./nginx
+    volumes:
+      - static_volume:/DjangoGram/static
+    ports:
+      - "1337:80"
+    depends_on:
+      - web
+
+volumes:
+  postgres_data:
+  static_volume:
